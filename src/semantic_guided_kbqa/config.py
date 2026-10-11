@@ -745,7 +745,7 @@ class AppConfig:
             ),
             decomposition_review_enabled=_bool_value(review.get("enabled", False)),
             decomposition_review_workflow=str(review.get("workflow", "verified")),
-            decomposition_prompt_family=str(review.get("prompt_family", "webqsp")).casefold(),
+            decomposition_prompt_family=str(review.get("prompt_family", "cwq")).casefold(),
             decomposition_prompt_profile=prompt_profile,
             decomposition_review_max_rewrites=int(review.get("max_rewrites", 2)),
             decomposition_review_output_attempts=int(review.get("output_attempts", 2)),

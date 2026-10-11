@@ -4860,7 +4860,7 @@ class SemanticGuidedPipeline:
         validator_model: ChatClient | None = None,
         decomposition_review_model: ChatClient | None = None,
         decomposition_review_workflow: str = "verified",
-        decomposition_prompt_family: str = "webqsp",
+        decomposition_prompt_family: str = "cwq",
         decomposition_prompt_profile: dict[str, str] | None = None,
         decomposition_review_max_rewrites: int = 2,
         decomposition_review_output_attempts: int = 2,
