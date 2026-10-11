@@ -13,10 +13,7 @@ from urllib import error, parse, request
 
 from .config import ChatConfig, EmbeddingConfig, FreebaseConfig
 from .contracts import EntityCandidate
-from .question_query_budget import (
-    execute_with_question_budget, bounded_request_timeout, remember_kg_label_rows,
-    current_repair_deadline, check_repair_deadline,
-)
+from .runtime_context import execute_with_question_budget, bounded_request_timeout, remember_kg_label_rows, current_repair_deadline, check_repair_deadline
 
 
 _LABEL_BATCH_SIZE = 128

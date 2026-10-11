@@ -18,7 +18,7 @@ from typing import Any, Iterable
 
 from .contracts import GroundedSemanticCandidate, QueryGraphCandidate
 from .lowering import LoweringError, lower_sparql
-from .numeric_scalar_safety import schema_safe_numeric_operators
+from .normalization import schema_safe_numeric_operators
 
 
 _VERSION = "zero-graph-challenger-v1"

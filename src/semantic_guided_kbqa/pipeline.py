@@ -15,14 +15,7 @@ from types import SimpleNamespace
 from typing import Any
 
 from .clients import ChatClient, KnowledgeGraph
-from .constraint_property_ranking import (
-    answer_set_safety_reason,
-    constraint_focus_phrase,
-    nested_label_parent_ids,
-    property_rank_evidence,
-    relation_tail_text,
-    semantic_only_is_confident,
-)
+from .constraint_repairs import answer_set_safety_reason, constraint_focus_phrase, nested_label_parent_ids, property_rank_evidence, relation_tail_text, semantic_only_is_confident
 from .contracts import (
     ContractError,
     DecompositionCandidate,
@@ -38,40 +31,32 @@ from .contracts import (
 )
 from .data import DecompositionStore, TrainingContract
 from .decomposition_review import DecompositionReviewer
-from .relative_temporal import RelativeTemporalBinder, semantic_projection_items
-from .selection import select_candidates
-from .question_context import linked_entity_context
-from .final_label_evidence import complete_final_answer_labels
-from .budgeted_final_labels import complete_budgeted_final_labels
-from .nested_name_schema_guard import nested_name_schema_challenger
-from .scalar_owner_union_safety import scalar_owner_union_challenger
-from .query_contradiction_safety import bound_subject_self_inequality
-from .terminal_union_scope_safety import terminal_union_scope_challenger
-from .model_entity_role_safety import model_entity_role_challenger
-from .question_query_budget import (
-    question_query_scope, current_query_budget, execute_repair_from_saved_budget,
-    has_saved_repair_budget, charge_repair_preparation,
-)
-from .source_role_execution_safety import source_role_challenger
-from .constraint_execution_safety import constraint_execution_challenger
-from .comparison_number_normalization import resolve_internal_constraint_spec
-from .compose_scalar_scope_safety import original_semantic_scope_certificate
-from .mediator_terminal_role_scope import mediator_terminal_role_scope
-from .budgeted_parent_character_voice_repair import compile_parent_character_voice_repair
-from .bound_year_equality_safety import compile_bound_year_equality
-from .bound_calendar_date_append import compile_bound_calendar_date_equality_append
-from .original_datetime_owner_restore import (
-    compile_datetime_owner_restore_from_current_stages, lower_original_datetime_owner_restore,
-)
-from .semantic_scalar_path_restore import compile_original_scalar_path_restore
-from .unsupported_intersection_execution_guard import unsupported_intersection_challenger
-from .unrecognized_intersection_scalar import (
-    compile_unrecognized_intersection_from_current_stages, lower_unrecognized_intersection_scalar,
-    resolve_unrecognized_intersection_source,
-)
-from .current_primary_grounded_constraint import current_primary_grounded_constraint_witness
-from .stability_runtime import apply_stability_repairs
-from .stability_answer_role import temporal_source_role_bounce_veto
+from .time_constraints import RelativeTemporalBinder, semantic_projection_items
+from .selectors import select_candidates
+from .runtime_context import linked_entity_context
+from .labels import complete_final_answer_labels
+from .labels import complete_budgeted_final_labels
+from .safety import nested_name_schema_challenger
+from .safety import scalar_owner_union_challenger
+from .safety import bound_subject_self_inequality
+from .safety import terminal_union_scope_challenger
+from .safety import model_entity_role_challenger
+from .runtime_context import question_query_scope, current_query_budget, execute_repair_from_saved_budget, has_saved_repair_budget, charge_repair_preparation
+from .safety import source_role_challenger
+from .constraint_repairs import constraint_execution_challenger
+from .normalization import resolve_internal_constraint_spec
+from .constraint_repairs import _compose_scalar_scope_safety_original_semantic_scope_certificate as original_semantic_scope_certificate
+from .safety import mediator_terminal_role_scope
+from .constraint_repairs import compile_parent_character_voice_repair
+from .time_constraints import compile_bound_year_equality
+from .time_constraints import compile_bound_calendar_date_equality_append
+from .time_constraints import compile_datetime_owner_restore_from_current_stages, lower_original_datetime_owner_restore
+from .constraint_repairs import compile_original_scalar_path_restore
+from .safety import unsupported_intersection_challenger
+from .constraint_repairs import compile_unrecognized_intersection_from_current_stages, lower_unrecognized_intersection_scalar, resolve_unrecognized_intersection_source
+from .constraint_repairs import current_primary_grounded_constraint_witness
+from .stability import apply_stability_repairs
+from .stability import temporal_source_role_bounce_veto
 from .budgeted_schema_repair import (
     capture_unproven_schema_rejection, compile_grounded_constraint_repair,
     existing_grounded_terminal_role_challenger,
@@ -80,9 +65,9 @@ from .budgeted_schema_repair import (
     budgeted_saved_compose_source_witness,
     lower_budgeted_scalar_query,
 )
-from .nested_name_schema_guard import _complete as _complete_source_execution
-from .zero_graph_role_safety import zero_graph_role_regression
-from .prompt_principles import SELECTOR_CONSTRAINT_POLICY
+from .safety import _nested_name_schema_guard_complete as _complete_source_execution
+from .safety import zero_graph_role_regression
+from .prompts import SELECTOR_CONSTRAINT_POLICY
 from .grounding import SemanticGrounder
 from .graph_reconstruction import (
     graph_reconstruction_answer_role_gate,
@@ -94,26 +79,12 @@ from .zero_graph_challenger import (
     zero_graph_challenger_gate,
     zero_graph_replacement_is_safe,
 )
-from .template_consensus_selector import SourceVerifiedTemplateConsensusSelector
-from .path_alignment_selector import PathAlignmentSelector, REASON_CODE as PATH_ALIGNMENT_REASON
-from .train_gold_extrema_selector import (
-    REASON_CODE as TRAIN_GOLD_EXTREMA_REASON,
-    TrainGoldPathExtremaSelector,
-)
-from .numeric_temporal_slot_normalization import (
-    partition_fixed_slot_executions,
-    postselect_fixed_slot_execution,
-    prepare_fixed_execution_slots,
-)
-from .entity_kind_fixed_beam import (
-    EntityKindFixedBeamPlanner,
-    PreparedEntityTemplateQuery,
-    execute_prepared_query as execute_entity_kind_prepared_query,
-    linked_entities_for_question,
-    postselect_entity_kind_execution,
-    select_empty_entity_kind_execution,
-)
-from .underanswer_expansion_selector import UnderanswerExpansionSelector
+from .selectors import SourceVerifiedTemplateConsensusSelector
+from .selectors import PathAlignmentSelector, _path_alignment_selector_REASON_CODE as PATH_ALIGNMENT_REASON
+from .selectors import _train_gold_extrema_selector_REASON_CODE as TRAIN_GOLD_EXTREMA_REASON, TrainGoldPathExtremaSelector
+from .time_constraints import partition_fixed_slot_executions, postselect_fixed_slot_execution, prepare_fixed_execution_slots
+from .selectors import EntityKindFixedBeamPlanner, PreparedEntityTemplateQuery, execute_prepared_query as execute_entity_kind_prepared_query, linked_entities_for_question, postselect_entity_kind_execution, select_empty_entity_kind_execution
+from .selectors import UnderanswerExpansionSelector
 from .ontology import relation_id_from_label, relation_label_from_id
 from .grounding_repair import (
     build_prefix_repair_graphs,
@@ -124,11 +95,7 @@ from .grounding_repair import (
     repair_temporal_operator_output,
 )
 from .lowering import LoweringError, build_query_graph, build_query_graph_v2, lower_sparql
-from .operator_prompt import (
-    OPERATOR_INSTRUCTION,
-    OPERATOR_INSTRUCTION_GLM,
-    OPERATOR_INSTRUCTION_V2,
-)
+from .prompts import OPERATOR_INSTRUCTION, OPERATOR_INSTRUCTION_GLM, OPERATOR_INSTRUCTION_V2
 from .validation import GLMOutputCorrector, semantic_output_schema
 
 
@@ -6037,7 +6004,7 @@ class SemanticGuidedPipeline:
             )
         source_failure = str(result.get("failure") or "FINAL_EMPTY_RESULT")
         try:
-            from .failure_retrieval_plugin import retrieve
+            from .failure_retrieval import _failure_retrieval_plugin_retrieve as retrieve
 
             context = SimpleNamespace(
                 question=question,
@@ -6163,7 +6130,7 @@ class SemanticGuidedPipeline:
         ):
             return result
         try:
-            from .extrema_relation_retrieval import retrieve_extrema_relation
+            from .failure_retrieval import retrieve_extrema_relation
 
             outcome = retrieve_extrema_relation(
                 pipeline=self,
@@ -6255,7 +6222,7 @@ class SemanticGuidedPipeline:
                 else result
             )
         try:
-            from .missing_relation_retrieval import retrieve_missing_relation
+            from .failure_retrieval import retrieve_missing_relation
 
             outcome = retrieve_missing_relation(
                 pipeline=self,
@@ -6381,7 +6348,7 @@ class SemanticGuidedPipeline:
             verbose_diagnostics=False,
         )
         try:
-            from .temporal_interval_retrieval import eligible, retrieve
+            from .failure_retrieval import eligible, _temporal_interval_retrieval_retrieve as retrieve
 
             if not eligible(context):
                 return False, result
@@ -6465,7 +6432,7 @@ class SemanticGuidedPipeline:
             return self._recover_failure_factorized_path(question, result)
         source_failure = str(result.get("failure") or "FINAL_EMPTY_RESULT")
         try:
-            from .failure_gold_sparql_retrieval import retrieve
+            from .failure_retrieval import _failure_gold_sparql_retrieval_retrieve as retrieve
 
             context = SimpleNamespace(
                 question=question,
@@ -6545,7 +6512,7 @@ class SemanticGuidedPipeline:
             return result
         source_failure = str(result.get("failure") or "FINAL_EMPTY_RESULT")
         try:
-            from .failure_factorized_path_retrieval import retrieve
+            from .failure_retrieval import _failure_factorized_path_retrieval_retrieve as retrieve
 
             context = SimpleNamespace(
                 question=question,
@@ -8515,7 +8482,7 @@ class SemanticGuidedPipeline:
             and getattr(self, "temporal_interval_retrieval_enabled", False)
         ):
             try:
-                from .temporal_interval_retrieval import eligible
+                from .failure_retrieval import eligible
 
                 interval_eligible = bool(
                     eligible(

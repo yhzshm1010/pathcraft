@@ -5,11 +5,11 @@ import unicodedata
 from typing import Any
 from .clients import ChatClient
 from .contracts import ContractError, parse_json_object
-from .prompt_principles import TEMPORAL_NUMERIC_POLICY, question_requirements
-from .train_fewshots import decomposition_examples
+from .prompts import TEMPORAL_NUMERIC_POLICY, _prompt_principles_question_requirements as question_requirements
+from .prompts import decomposition_examples
 def _generic_examples(action):
     return ""
-from .cwq_fewshots import cwq_examples
+from .prompts import cwq_examples
 
 
 

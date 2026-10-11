@@ -20,12 +20,12 @@ from .evaluation import (
 )
 from .grounding import SemanticGrounder
 from .ontology import FreebaseOntology
-from .path_alignment_selector import PathAlignmentSelector
+from .selectors import PathAlignmentSelector
 from .pipeline import SemanticGuidedPipeline
-from .template_consensus_selector import SourceVerifiedTemplateConsensusSelector
-from .train_gold_extrema_selector import TrainGoldPathExtremaSelector
-from .entity_kind_fixed_beam import EntityKindFixedBeamPlanner
-from .underanswer_expansion_selector import UnderanswerExpansionSelector
+from .selectors import SourceVerifiedTemplateConsensusSelector
+from .selectors import TrainGoldPathExtremaSelector
+from .selectors import EntityKindFixedBeamPlanner
+from .selectors import UnderanswerExpansionSelector
 
 
 def build_pipeline(

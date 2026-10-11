@@ -1,3 +1,47 @@
+"""Consolidated runtime context; original rules and budgets retained."""
+from __future__ import annotations
+
+
+# ---- question_context ----
+"""Read-only KG context for already-linked entities; never reads Gold answers."""
+import re
+from .evaluation import canonicalize_answer_id as _question_context_canonicalize_answer_id
+
+
+def linked_entity_context(kg, linked_entities):
+    ids = [x for x in linked_entities if re.fullmatch(r'[mg]\.[A-Za-z0-9_]+', x)]
+    if not ids:
+        return []
+    values = ' '.join('ns:' + x for x in ids)
+    query = '''PREFIX ns: <http://rdf.freebase.com/ns/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT DISTINCT ?entity ?type ?label ?start ?end WHERE {
+VALUES ?entity { ''' + values + ''' }
+OPTIONAL { ?entity ns:type.object.type ?type .
+FILTER(!STRSTARTS(STR(?type), "http://rdf.freebase.com/ns/base.") && !STRSTARTS(STR(?type), "http://rdf.freebase.com/ns/user.") && ?type != ns:common.topic)
+OPTIONAL { ?type rdfs:label ?label . FILTER(LANG(?label) = "en") } }
+OPTIONAL { ?entity ns:time.event.start_date ?start . }
+OPTIONAL { ?entity ns:time.event.end_date ?end . }
+} LIMIT 256'''
+    records = {x: {'id': x, 'name': linked_entities[x], 'types': []} for x in ids}
+    for row in kg.execute(query):
+        entity = _question_context_canonicalize_answer_id(row.get('entity', ''))
+        if entity not in records:
+            continue
+        record = records[entity]
+        label = row.get('label') or _question_context_canonicalize_answer_id(row.get('type', '')).replace('.', ' ')
+        if label and label not in record['types']:
+            record['types'].append(label)
+        for key in ('start', 'end'):
+            if row.get(key):
+                record[key + '_date'] = _question_context_canonicalize_answer_id(row[key])
+    # The Gold ID/name itself is useful anchor evidence even when the optional
+    # type/date lookup returns no row. Never silently drop a configured entity.
+    return list(records.values())
+
+
+
+# ---- question_query_budget ----
 """Per-question exact read-only query reuse and paid-for bounded repairs.
 
 Only successful, deterministic SELECT results are reused, with exact query
@@ -11,7 +55,7 @@ from copy import copy
 from dataclasses import dataclass, field, replace
 import re
 import time
-from .evaluation import canonicalize_answer_id
+from .evaluation import canonicalize_answer_id as _question_query_budget_canonicalize_answer_id
 
 
 @dataclass
@@ -89,10 +133,10 @@ def remember_kg_label_rows(rows):
     if state is None:
         return
     for row in rows:
-        identifier = canonicalize_answer_id(row.get("entity", ""))
+        identifier = _question_query_budget_canonicalize_answer_id(row.get("entity", ""))
         label = str(row.get("label", "")).strip()
         if (not re.fullmatch(r"[mg]\.[A-Za-z0-9_]+", identifier) or not label
-                or re.fullmatch(r"[mg]\.[A-Za-z0-9_]+", canonicalize_answer_id(label))):
+                or re.fullmatch(r"[mg]\.[A-Za-z0-9_]+", _question_query_budget_canonicalize_answer_id(label))):
             continue
         if identifier not in state.kg_name_evidence and len(state.kg_name_evidence) >= 2048:
             continue
@@ -189,3 +233,7 @@ def execute_repair_from_saved_budget(client, query, *, maximum_seconds=1.0):
     finally:
         state.repair_seconds += time.monotonic() - started
         _REPAIR_DEADLINE.reset(deadline_token)
+
+
+
+__all__ = ['QuestionQueryBudget', 'bounded_request_timeout', 'charge_repair_preparation', 'check_repair_deadline', 'current_query_budget', 'current_repair_deadline', 'execute_repair_from_saved_budget', 'execute_with_question_budget', 'has_saved_repair_budget', 'linked_entity_context', 'question_query_scope', 'remember_kg_label_rows']

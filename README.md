@@ -14,6 +14,28 @@ This is a **code-only release**. It does not contain benchmark datasets, generat
 
 WebQSP configurations, launchers, datasets, evaluation experiments and trace replay tools are not distributed. Some generic internal Freebase transport structures retain historical names; the public data-construction CLI only accepts CWQ.
 
+The inference package is consolidated into **28 Python files**. Closely related
+helpers share a module; rules, prompts, score weights and query/model budgets
+are unchanged by this file-layout refactor. Independent private helpers and
+caches keep separate names to prevent collisions.
+
+| Module | Responsibility |
+| --- | --- |
+| `pipeline.py`, `cli.py`, `config.py` | Stage orchestration, entry point and configuration |
+| `contracts.py`, `data.py`, `evaluation.py`, `validation.py` | Data structures, input loading, metrics and output validation |
+| `clients.py`, `decomposition_review.py`, `prompts.py` | Model/KG clients, GLM review and prompt examples |
+| `ontology.py`, `grounding.py`, `lowering.py` | Schema lookup, grounding and SPARQL compilation |
+| `selectors.py`, `labels.py` | Candidate ranking/selection and answer-label evidence |
+| `normalization.py`, `time_constraints.py` | Numeric normalization and temporal constraints |
+| `safety.py`, `constraint_repairs.py`, `stability.py`, `runtime_context.py` | Scope guards, bounded repairs, stability checks and per-question budgets |
+| `failure_retrieval.py`, `budgeted_schema_repair.py` | Failure-only retrieval and bounded schema repair |
+| `graph_reconstruction.py`, `grounding_repair.py`, `template_path_retrieval.py`, `zero_graph_challenger.py` | Graph reconstruction and candidate retrieval |
+| `__init__.py` | Package exports |
+
+Legacy helper-module import paths have been replaced by these grouped modules.
+The documented CLI commands are unchanged. Dataset-construction source modules
+remain separate because they form a different, independently usable workflow.
+
 ## Install
 
 ```bash

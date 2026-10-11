@@ -923,7 +923,7 @@ def _validated_provided_scalar_spec(
         return None
     # Independently recheck the strict local word parser's literal and cue;
     # a caller-supplied number is not accepted merely because it has a tag.
-    from .comparison_number_normalization import normalize_comparison_constraint_spec
+    from .normalization import normalize_comparison_constraint_spec
 
     verified = normalize_comparison_constraint_spec(text)
     if (not isinstance(verified, Mapping)
