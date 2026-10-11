@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pathcraft-cwq"
+version = "0.6.1"
+description = "CWQ inference and verified stage-aligned dataset construction"
+requires-python = ">=3.11"
+dependencies = ["requests>=2.31"]
+
+[project.scripts]
+pathcraft = "semantic_guided_kbqa.cli:main"
+pathcraft-build-data = "gpt54_data_flywheel.cli:main"
+
+[tool.setuptools]
+packages = ["semantic_guided_kbqa", "gpt54_data_flywheel"]
+package-dir = {semantic_guided_kbqa = "src/semantic_guided_kbqa", gpt54_data_flywheel = "dataset_construction/src/gpt54_data_flywheel"}
+
+[tool.setuptools.package-data]
+semantic_guided_kbqa = ["resources/*.json"]
+
