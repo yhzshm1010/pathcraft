@@ -25,9 +25,9 @@ from .prompts import (
     GATEWAY_COMPOSE_INSTRUCTIONS,
     GATEWAY_SEMANTIC_INSTRUCTIONS,
     GATEWAY_VERIFY_INSTRUCTIONS,
-    KAEDE_DECOMPOSE_SFT_INSTRUCTION,
-    KAEDE_SEMANTIC_SFT_INSTRUCTION,
-    KAEDE_SOURCE_DECOMPOSITION_ALIGNMENT,
+    PATH_DECOMPOSE_SFT_INSTRUCTION,
+    PATH_SEMANTIC_SFT_INSTRUCTION,
+    SOURCE_DECOMPOSITION_ALIGNMENT,
     LEAN_COMPOSE_INSTRUCTIONS,
     LEAN_SEMANTIC_INSTRUCTIONS,
     LEAN_VERIFY_INSTRUCTIONS,
@@ -556,7 +556,7 @@ def _align_semantic_graph_goals(
     graph: Any,
     decomposition: list[str],
 ) -> tuple[Any, list[str]]:
-    """Copy path-level KaeDe decomposition text into semantic path goals."""
+    """Copy path-level CWQ decomposition text into semantic path goals."""
     if not isinstance(graph, dict):
         return graph, []
     paths = graph.get("semantic_paths")
@@ -1005,7 +1005,7 @@ class Flywheel:
             )
         if config.preserve_source_decomposition and decompose_source is None:
             raise ValueError(
-                "preserve_source_decomposition=True requires a KaeDe decomposition source"
+                "preserve_source_decomposition=True requires a CWQ decomposition source"
             )
         if config.strict_decomposition_rewrite and decompose_source is None:
             raise ValueError(
@@ -1760,8 +1760,8 @@ class Flywheel:
                 )
                 semantic_model_instructions = SEMANTIC_INSTRUCTIONS
                 if self._enforce_decomposition_alignment():
-                    semantic_model_instructions += "\n" + KAEDE_SOURCE_DECOMPOSITION_ALIGNMENT
-                    semantic_instructions += "\n" + KAEDE_SOURCE_DECOMPOSITION_ALIGNMENT
+                    semantic_model_instructions += "\n" + SOURCE_DECOMPOSITION_ALIGNMENT
+                    semantic_instructions += "\n" + SOURCE_DECOMPOSITION_ALIGNMENT
                 semantic_generation = self.client.generate_json(
                     schema_name="rewritten_semantic_graph",
                     schema=SEMANTIC_GRAPH_SCHEMA,
@@ -2088,8 +2088,8 @@ class Flywheel:
                 else (LEAN_VERIFY_INSTRUCTIONS if lean else GATEWAY_VERIFY_INSTRUCTIONS)
             )
             if self._enforce_decomposition_alignment():
-                verify_instructions += "\n" + KAEDE_SOURCE_DECOMPOSITION_ALIGNMENT
-                verify_gateway_instructions += "\n" + KAEDE_SOURCE_DECOMPOSITION_ALIGNMENT
+                verify_instructions += "\n" + SOURCE_DECOMPOSITION_ALIGNMENT
+                verify_gateway_instructions += "\n" + SOURCE_DECOMPOSITION_ALIGNMENT
             verify_generation = self.client.generate_json(
                 schema_name=(
                     "flywheel_verification_light" if constrained else "flywheel_verification"
@@ -2483,7 +2483,7 @@ class Flywheel:
             "decompose_row": (
                 {
                     "instruction": (
-                        KAEDE_DECOMPOSE_SFT_INSTRUCTION
+                        PATH_DECOMPOSE_SFT_INSTRUCTION
                         if self.config.preserve_source_decomposition
                         else (
                             STRICT_DECOMPOSE_SFT_INSTRUCTION
@@ -2499,7 +2499,7 @@ class Flywheel:
             ),
             "semantic_row": {
                 "instruction": (
-                    KAEDE_SEMANTIC_SFT_INSTRUCTION
+                    PATH_SEMANTIC_SFT_INSTRUCTION
                     if self.config.preserve_source_decomposition
                     or self.config.strict_decomposition_rewrite
                     else SEMANTIC_SFT_INSTRUCTION
@@ -2578,7 +2578,7 @@ class Flywheel:
         if self.manifest_path.exists():
             current = json.loads(self.manifest_path.read_text(encoding="utf-8"))
             existing = dict(current.get("configuration", {}) or {})
-            # Manifests written before the optional KaeDe-preservation mode used
+            # Manifests written before the optional CWQ-preservation mode used
             # no flag; treat them as the default rewriting mode for resumption.
             existing.setdefault("preserve_source_decomposition", False)
             existing.setdefault("strict_decomposition_rewrite", False)

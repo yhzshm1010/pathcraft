@@ -12,7 +12,7 @@ from .openai_client import (
     DEFAULT_DEEPSEEK_BASE_URL,
     DEFAULT_GLM_BASE_URL,
     DEFAULT_RESPONSES_URL,
-    KaedeResponsesClient,
+    ExternalResponsesClient,
     ResponsesClient,
 )
 from .pipeline import (
@@ -91,7 +91,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=0,
         help=(
-            "optional output cap; 0 omits it for Responses and uses the kaede_vqg "
+            "optional output cap; 0 omits it for Responses and uses the external "
             "Chat default of 2048"
         ),
     )
@@ -121,7 +121,7 @@ def build_parser() -> argparse.ArgumentParser:
         choices=("auto", "standard", "lean", "micro"),
         default="auto",
         help=(
-            "auto uses lean for the KAEDE proxy, micro for chat, and standard for "
+            "auto uses lean for the External proxy, micro for chat, and standard for "
             "direct Responses"
         ),
     )
@@ -192,7 +192,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--preserve-source-decomposition",
         action="store_true",
         help=(
-            "for CWQ, keep the supplied KaeDe path-level decomposition and start at "
+            "for CWQ, keep the supplied CWQ path-level decomposition and start at "
             "semantic generation; default rewrites decomposition as before"
         ),
     )
@@ -262,7 +262,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     )
     is_deepseek = model_hint.casefold().startswith("deepseek")
     api_mode = requested_api_mode or (
-        "chat" if args.dataset == "cwq" or is_deepseek else "kaede"
+        "chat" if args.dataset == "cwq" or is_deepseek else "external"
     )
     if is_deepseek and api_mode != "chat":
         raise SystemExit("deepseek-v4-flash requires --api-mode chat")
@@ -382,8 +382,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         external_validator_command = os.environ.get(validator_env) or (
             DEFAULT_EXECUTION_VALIDATOR if require_execution_validation else ""
         )
-    if api_mode == "kaede":
-        client = KaedeResponsesClient(
+    if api_mode == "external":
+        client = ExternalResponsesClient(
             api_key=api_key,
             model=model,
             responses_url=responses_url,
@@ -414,7 +414,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             pipeline_profile = "standard"
         else:
             pipeline_profile = {
-                "kaede": "lean",
+                "external": "lean",
                 "chat": "micro",
                 "responses": "standard",
             }[api_mode]

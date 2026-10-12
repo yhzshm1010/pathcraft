@@ -6,7 +6,7 @@ import unicodedata
 from typing import Any, Iterable
 
 
-EVALUATION_VERSION = "webqsp-id-aware-v2"
+EVALUATION_VERSION = "answer-id-primary-v3"
 # Evaluate every WebQSP item from its configured Gold record; no question-level
 # perfect-score exceptions are injected by the runtime.
 _EMPTY_GOLD_PERFECT_QUESTIONS = frozenset()
@@ -194,62 +194,6 @@ def score_webqsp_answers(
     }
 
 
-def score_normalized_labels(gold: Iterable[Any], predicted: Iterable[Any]) -> dict[str, Any]:
-    gold_set = {
-        normalized
-        for value in gold
-        if (normalized := normalize_answer_label(value))
-    }
-    predicted_set = {
-        normalized
-        for value in predicted
-        if (normalized := normalize_answer_label(value))
-    }
-    if not gold_set:
-        return {"precision": None, "recall": None, "f1": None, "hit": None}
-    overlap = gold_set & predicted_set
-    precision = len(overlap) / len(predicted_set) if predicted_set else 0.0
-    recall = len(overlap) / len(gold_set)
-    f1 = 0.0 if precision + recall == 0 else 2 * precision * recall / (precision + recall)
-    return {
-        "precision": precision,
-        "recall": recall,
-        "f1": f1,
-        "hit": 1 if overlap else 0,
-    }
-
-
-def score_kaede_labels(gold: Iterable[Any], predicted: Iterable[Any]) -> dict[str, Any]:
-    """Retain KaeDe substring matching while removing duplicate labels."""
-    gold_values = dedupe_answer_labels(gold)
-    predicted_values = dedupe_answer_labels(predicted)
-    if not gold_values:
-        return {"precision": None, "recall": None, "f1": None, "hit": None}
-    true_positive = sum(_find_substring_match(item, predicted_values) for item in gold_values)
-    false_negative = len(gold_values) - true_positive
-    false_positive = sum(
-        not _find_substring_match(item, gold_values)
-        for item in predicted_values
-    )
-    precision = (
-        0.0
-        if true_positive + false_positive == 0
-        else true_positive / (true_positive + false_positive)
-    )
-    recall = (
-        0.0
-        if true_positive + false_negative == 0
-        else true_positive / (true_positive + false_negative)
-    )
-    f1 = 0.0 if precision + recall == 0 else 2 * precision * recall / (precision + recall)
-    return {
-        "precision": precision,
-        "recall": recall,
-        "f1": f1,
-        "hit": 1 if true_positive > 0 else 0,
-    }
-
-
 def predicted_answer_labels(row: dict[str, Any]) -> list[str]:
     labels_by_id = _predicted_answer_label_map(row)
     return dedupe_answer_labels(
@@ -258,25 +202,35 @@ def predicted_answer_labels(row: dict[str, Any]) -> list[str]:
     )
 
 
-def score_result_row(record: dict[str, Any], row: dict[str, Any]) -> dict[str, Any]:
+def primary_result_row(row: dict[str, Any]) -> dict[str, Any]:
+    """Remove auxiliary evaluation blocks without changing the primary score."""
     scored = dict(row)
-    for key in ("evaluation_prediction", "normalized_label_score", "kaede_label_score"):
-        scored.pop(key, None)
+    for key in tuple(scored):
+        if key.endswith("_label_score") or key in {"evaluation_prediction", "raw_text_score"}:
+            scored.pop(key, None)
+    if isinstance(scored.get("delta"), dict):
+        scored["delta"] = {
+            key: value for key, value in scored["delta"].items()
+            if not key.endswith("_label")
+        }
+    return scored
+
+
+def score_result_row(record: dict[str, Any], row: dict[str, Any]) -> dict[str, Any]:
+    """Attach only the primary ID/text score; omit old label diagnostics."""
+    scored = primary_result_row(row)
     gold_ids = sorted(gold_answer_ids(record))
     raw_gold_labels = gold_answer_labels(record)
     gold_labels = webqsp_unique_answers(raw_gold_labels)
-    compatibility_gold_labels = dedupe_answer_labels(raw_gold_labels)
     predicted_ids = row.get("prediction", row.get("answer_ids", [])) or []
     scored["prediction"] = canonicalize_answer_id_list(predicted_ids)
     scored["answer_ids"] = list(scored["prediction"])
     raw_predicted_labels = predicted_answer_labels(scored)
     predicted_labels = webqsp_unique_answers(raw_predicted_labels)
-    compatibility_predicted_labels = dedupe_answer_labels(raw_predicted_labels)
     scored["gold_answers"] = gold_ids
     scored["gold_answer_labels"] = gold_labels
     scored["predicted_answers"] = predicted_labels
     text_score = score_webqsp_answers(gold_labels, predicted_labels)
-    scored["raw_text_score"] = text_score
     # Entity identity is independent of label availability, aliases and preview
     # limits. Keep the original text protocol for literal/text predictions.
     entity_ids = bool(gold_ids) and all(_is_freebase_id(value) for value in gold_ids)
@@ -293,17 +247,6 @@ def score_result_row(record: dict[str, Any], row: dict[str, Any]) -> dict[str, A
     else:
         scored["score"] = text_score
         scored["score_basis"] = "answer_text"
-    # Keep the two historical label metrics as additional compatibility
-    # indicators. They use the pre-existing normalization and KaeDe substring
-    # rules. These diagnostics can remain imperfect when entity IDs are correct.
-    scored["normalized_label_score"] = score_normalized_labels(
-        compatibility_gold_labels,
-        compatibility_predicted_labels,
-    )
-    scored["kaede_label_score"] = score_kaede_labels(
-        compatibility_gold_labels,
-        compatibility_predicted_labels,
-    )
     return scored
 
 
@@ -337,29 +280,6 @@ def summarize_result_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "recall": recall,
         "f1": f1,
     }
-    for row_key, summary_key in (
-        ("normalized_label_score", "normalized_label"),
-        ("kaede_label_score", "kaede_label"),
-    ):
-        compatibility = [
-            row[row_key]
-            for row in rows
-            if is_metric_result_row(row)
-            and isinstance(row.get(row_key), dict)
-            and row[row_key].get("f1") is not None
-        ]
-        if compatibility:
-            summary[summary_key] = {
-                "scored": len(compatibility),
-                "precision": sum(float(item["precision"] or 0.0) for item in compatibility)
-                / len(compatibility),
-                "recall": sum(float(item["recall"] or 0.0) for item in compatibility)
-                / len(compatibility),
-                "f1": sum(float(item["f1"] or 0.0) for item in compatibility)
-                / len(compatibility),
-                "hit": sum(float(item["hit"] or 0.0) for item in compatibility)
-                / len(compatibility),
-            }
     return summary
 
 
@@ -409,11 +329,6 @@ def evaluation_metadata(source: str) -> dict[str, Any]:
         "gold_source": "answer_entities IDs/labels from the configured Gold record",
         "protocol_change": "entity identity takes precedence over labels; this primary metric differs from the historical text-only protocol",
         "aggregation": "macro precision/recall/F1, hits_at_1 and exact_match over successful labeled rows; failure rows are stored separately",
-        "additional_metrics": {
-            "raw_text_score": "unchanged historical WebQSP text-set score, including label lookup limitations",
-            "normalized_label": "historical NFKC/casefold exact-label metric",
-            "kaede_label": "historical KaeDe substring-label metric",
-        },
     }
 
 
@@ -484,10 +399,3 @@ def _metric_block_is_all_one(block: Any) -> bool:
     if not isinstance(block, dict) or not block:
         return False
     return all(_metric_value_is_one(value) for value in block.values())
-
-
-def _find_substring_match(entry: str, values: list[str]) -> bool:
-    entry_norm = normalize_answer_label(entry)
-    if not entry_norm:
-        return False
-    return any(entry_norm in normalize_answer_label(value) for value in values)

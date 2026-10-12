@@ -1,10 +1,15 @@
 # Final stage-aligned TRAIN snapshots
 
-These are the final Alpaca-format input files used by the retained four-stage
-fine-tuning models, not evaluation predictions or execution traces.
-Every exported training file is byte-identical to its retained local snapshot.
-Publishing these files does not change any runtime code, prompt, model service
-or retrieval configuration.
+These stage-aligned TRAIN exports preserve the questions, targets, order and
+counts of the retained four-stage fine-tuning inputs. They are not evaluation
+predictions or execution traces. The publication cleanup neutralizes only
+the instruction wording in the CWQ decomposition file. The other seven files
+remain byte-identical to their retained local snapshots. The original and
+published hashes of the changed file are recorded in `manifest.json`.
+
+The released CWQ decomposition instruction is therefore not byte-identical
+to the historical training prompt. No models are retrained by this cleanup,
+and new predictions using the revised wording need not match historical runs.
 
 | Stage | CWQ: 25,328 rows | WebQSP: 2,651 rows |
 | --- | --- | --- |
@@ -31,7 +36,8 @@ within each dataset. Each dataset folder includes a self-contained
 - All questions match the retained official TRAIN source; WebQSP comparison
   accepts its official `RawQuestion` or `ProcessedQuestion` text.
 - Row counts and question order match across all four stages.
-- Source and published-file SHA-256 values match exactly.
+- Published-file SHA-256 values match the current manifest; source hashes
+  match except for the explicitly recorded instruction-only cleanup.
 - No credentials, former publisher username, traces, logs, weights or test
   files are included. Original questions/targets are not rewritten or filtered.
 
@@ -59,7 +65,7 @@ For example, from this directory:
 sha256sum cwq/*train.json webqsp/*train.json
 ```
 
-The original text files total approximately 185 MiB. Large files may not have
+The published text files total approximately 185 MiB. Large files may not have
 a GitHub browser preview; use Git clone or the Raw/download link. No Git LFS
 pointers, compressed substitutes or external download service are required.
 

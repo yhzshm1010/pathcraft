@@ -361,8 +361,8 @@ def _extract_chat_output_text(response: dict[str, Any]) -> str:
     raise OpenAIRequestError("Chat Completions API returned no message content")
 
 
-class KaedeResponsesClient:
-    """Thin adapter around the exact Responses client used by kaede_vqg."""
+class ExternalResponsesClient:
+    """Optional adapter for an explicitly configured structured Responses client."""
 
     def __init__(
         self,
@@ -380,12 +380,12 @@ class KaedeResponsesClient:
         self.model = model
         self.responses_url = _normalize_responses_url(responses_url)
         self.api_url = self.responses_url
-        self.api_mode = "kaede"
+        self.api_mode = "external"
         self.json_mode = "schema"
         self.timeout = timeout
         self.max_network_retries = max(0, max_network_retries)
         self.reasoning_effort = reasoning_effort
-        self._responses_config, self._responses_client = _kaede_client_types()
+        self._responses_config, self._responses_client = _external_client_types()
 
     def generate_json(
         self,
@@ -430,30 +430,28 @@ class KaedeResponsesClient:
                     value=value,
                     response_id=str(raw.get("id", "")),
                     usage=raw.get("usage", {}) if isinstance(raw.get("usage"), dict) else {},
-                    transport_mode="kaede_responses",
+                    transport_mode="external_responses",
                 )
-            except Exception as exc:  # noqa: BLE001 - preserve KAEDE integration errors
+            except Exception as exc:  # noqa: BLE001 - preserve External integration errors
                 errors.append(f"attempt {attempt + 1}: {exc}")
                 if attempt < self.max_network_retries:
                     time.sleep(min(30.0, 2.0**attempt))
-        raise OpenAIRequestError("KAEDE Responses request failed: " + "; ".join(errors))
+        raise OpenAIRequestError("External Responses request failed: " + "; ".join(errors))
 
 
-def _kaede_client_types():
-    project_root = Path(__file__).resolve().parents[2]
-    source_root = Path(
-        os.environ.get("WEBQSP_MAS_SRC", project_root / "vendor/webqsp_mas/src")
-    ).resolve()
-    if not (source_root / "webqsp_mas/llm_client.py").is_file():
-        raise RuntimeError(
-            f"KAEDE Responses client not found under {source_root}; set WEBQSP_MAS_SRC"
-        )
-    source_text = str(source_root)
-    if source_text not in sys.path:
-        sys.path.insert(0, source_text)
+def _external_client_types():
+    import importlib
+
+    source = os.environ.get("EXTERNAL_RESPONSES_SRC", "").strip()
+    if source:
+        source_text = str(Path(source).expanduser().resolve())
+        if source_text not in sys.path:
+            sys.path.insert(0, source_text)
+    module = os.environ.get("EXTERNAL_RESPONSES_MODULE", "").strip()
+    if not module:
+        raise RuntimeError("ExternalResponsesClient requires EXTERNAL_RESPONSES_MODULE")
     try:
-        from webqsp_mas.llm_client import ResponsesClient as OriginalResponsesClient
-        from webqsp_mas.llm_client import ResponsesConfig
+        backend = importlib.import_module(module)
     except Exception as exc:  # noqa: BLE001 - provide a useful local integration error
-        raise RuntimeError(f"Could not import KAEDE Responses client from {source_root}: {exc}") from exc
-    return ResponsesConfig, OriginalResponsesClient
+        raise RuntimeError(f"Could not import external Responses client {module}: {exc}") from exc
+    return backend.ResponsesConfig, backend.ResponsesClient

@@ -41,7 +41,17 @@ logical forms and processed annotations, where applicable.
 
 - [KaeDe repository](https://github.com/pvfeldt/KaeDe)
 - [KaeDe paper](https://aclanthology.org/2025.findings-emnlp.582/)
-- [Preserved upstream MIT notice](licenses/KaeDe-MIT.txt)
+- [Preserved upstream MIT notice](licenses/upstream-MIT.txt)
 
 The MIT notice applies to the relevant KaeDe contributions. Original benchmark
 questions and other upstream content are not relicensed by this notice.
+
+### Optional executor integration
+
+The execution validator can load the same external executor through neutral
+configuration names: set `FREEBASE_EXECUTOR_SRC` to its installed `src`
+directory and `FREEBASE_EXECUTOR_MODULE` to `kaede_vqg.freebase` when using
+that upstream implementation. A compatible executor may be supplied instead.
+This configuration rename does not replace the dependency or remove its
+attribution. The default GLM chat transport and CWQ inference do not use this
+external executor module.

@@ -1,7 +1,14 @@
 {
-  "format": "pathcraft-training-release-v1",
+  "format": "pathcraft-training-release-v2",
   "split": "train",
-  "content_policy": "Byte-identical final SFT stage snapshots; no test, trace, logs or weights.",
+  "content_policy": "Final SFT stage snapshots with neutralized CWQ decomposition instruction wording; inputs, targets, order and counts unchanged. No test, trace, logs or weights.",
+  "publication_transform": {
+    "scope": "cwq/decompose_train.json instruction field only",
+    "description": "Replace the upstream method name with CWQ path-level wording; remove the redundant trailing dataset qualifier.",
+    "rows_modified": 25328,
+    "input_output_history_unchanged": true,
+    "historical_training_bytes_identical": false
+  },
   "question_comparison": "Whitespace-normalized casefold; WebQSP accepts official RawQuestion or ProcessedQuestion.",
   "datasets": {
     "cwq": {
@@ -11,8 +18,9 @@
         "decomposition": {
           "file": "decompose_train.json",
           "rows": 25328,
-          "bytes": 19488727,
-          "sha256": "3df57446051fa8fae0e24afeb6a04e3aac48388c386f7cfee519581dd4181299"
+          "bytes": 19235447,
+          "sha256": "ccd3dc6c9e14d40c9c48ca359322b0eef7b73be6c3351674b07a79edec3caf95",
+          "original_training_sha256": "3df57446051fa8fae0e24afeb6a04e3aac48388c386f7cfee519581dd4181299"
         },
         "semantic": {
           "file": "semantic_path_train.json",

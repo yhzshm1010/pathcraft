@@ -37,8 +37,8 @@ from gpt54_data_flywheel.pipeline import (  # noqa: E402
 )
 from gpt54_data_flywheel.prompts import (  # noqa: E402
     COMPOSE_SFT_INSTRUCTION,
-    KAEDE_DECOMPOSE_SFT_INSTRUCTION,
-    KAEDE_SEMANTIC_SFT_INSTRUCTION,
+    PATH_DECOMPOSE_SFT_INSTRUCTION,
+    PATH_SEMANTIC_SFT_INSTRUCTION,
     SEMANTIC_SFT_INSTRUCTION,
 )
 from gpt54_data_flywheel.validation import (  # noqa: E402
@@ -93,7 +93,7 @@ def build_parser() -> argparse.ArgumentParser:
         action=argparse.BooleanOptionalAction,
         default=None,
         help=(
-            "strictly preserve the original KaeDe decomposition and semantic-path "
+            "strictly preserve the original CWQ decomposition and semantic-path "
             "skeleton. By default manual corrections are gold-first: decomposition, "
             "anchors, paths, relations, variables, and operators may be corrected, "
             "while the corrected semantic graph must remain internally consistent "
@@ -138,7 +138,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     finetune_output = args.finetune_output or (
         DEFAULT_CWQ_FINETUNE_OUTPUT if is_cwq else DEFAULT_FINETUNE_OUTPUT
     )
-    # Manual correction is gold-first by default, including for CWQ/KaeDe.
+    # Manual correction is gold-first by default, including for CWQ/CWQ.
     # Pass --preserve-source-decomposition only when an exact source-preserving
     # review is explicitly desired.
     preserve_source_decomposition = (
@@ -216,7 +216,7 @@ def validate_and_accept(
         pair=pair,
         required=preserve_source_decomposition,
     )
-    # For manual KaeDe corrections, preserve only the source *skeleton* here:
+    # For manual CWQ corrections, preserve only the source *skeleton* here:
     # decomposition text, semantic-path count/order/ids/goals, and anchor_ref slots.
     # Do not pass the original source graph/program into the generic validators,
     # because doing so also freezes incorrect anchor grounding/surfaces and can
@@ -409,7 +409,7 @@ def _correction_decomposition(
         }
         if decomposition != source_decomposition:
             raise ValueError(
-                "correction decomposition must exactly preserve the KaeDe source decomposition"
+                "correction decomposition must exactly preserve the CWQ source decomposition"
             )
     return decomposition
 
@@ -443,17 +443,17 @@ def _validate_source_path_contract(
     candidate_graph: dict[str, Any],
     source_graph: dict[str, Any],
 ) -> list[str]:
-    """Preserve the KaeDe semantic-path skeleton while allowing grounding repair.
+    """Preserve the CWQ semantic-path skeleton while allowing grounding repair.
 
     Manual correction is allowed to change anchor ``surface`` values, relations,
     variables, and operators so the candidate can align with the gold SPARQL.
-    What remains frozen is the KaeDe path skeleton used by the decomposition:
+    What remains frozen is the CWQ path skeleton used by the decomposition:
 
     * semantic-path count/order/IDs,
     * each path's ``anchor_ref`` slot/ID,
     * each path's ``goal``.
 
-    The full ``anchors`` list is intentionally *not* frozen.  KaeDe/source
+    The full ``anchors`` list is intentionally *not* frozen.  CWQ/source
     records may contain unused or later-added anchors; manual correction may
     add, remove, or reground those anchors.  Only anchors actually referenced
     by preserved semantic paths are structural.
@@ -464,7 +464,7 @@ def _validate_source_path_contract(
     errors: list[str] = []
 
     # Do not require the complete anchor arrays to have the same length/order.
-    # Only path-referenced anchor IDs are part of the preserved KaeDe skeleton.
+    # Only path-referenced anchor IDs are part of the preserved CWQ skeleton.
     candidate_anchors = list(candidate_graph.get("anchors", []) or [])
     candidate_anchor_ids = {
         anchor.get("id")
@@ -570,7 +570,7 @@ def _accepted_record(
         "cwq_source": pair.cwq_source.as_context() if pair.cwq_source else None,
         "decompose_row": (
             {
-                "instruction": KAEDE_DECOMPOSE_SFT_INSTRUCTION,
+                "instruction": PATH_DECOMPOSE_SFT_INSTRUCTION,
                 "input": _json_text({"question": pair.question}),
                 "output": _json_text(decomposition),
                 "history": [],
@@ -579,7 +579,7 @@ def _accepted_record(
         ),
         "semantic_row": {
             "instruction": (
-                KAEDE_SEMANTIC_SFT_INSTRUCTION
+                PATH_SEMANTIC_SFT_INSTRUCTION
                 if dataset == "cwq" and decomposition is not None
                 else SEMANTIC_SFT_INSTRUCTION
             ),

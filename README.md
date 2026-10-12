@@ -11,9 +11,9 @@ This release includes **code and the final CWQ/WebQSP stage-aligned TRAIN snapsh
 - `prompts/`: frozen CWQ reviewer policies.
 - `scripts/`: local asset import, question-only decomposition preparation, fresh decomposition inference, and CWQ inference launcher.
 - `dataset_construction/`: CWQ training-data generation, Gold-SPARQL construction, static/execution validation, stage splitting and export. See its README.
-- `data/train/`: four final SFT stage files per dataset: CWQ (25,328 rows per stage) and WebQSP (2,651 rows per stage), registration files, checksums and source notices. See its README.
+- `data/train/`: four stage-aligned SFT exports per dataset: CWQ (25,328 rows per stage) and WebQSP (2,651 rows per stage), registration files, checksums and source notices. See its README for the instruction-only publication cleanup.
 
-WebQSP inference configurations/launchers, evaluation experiments and trace replay tools are not distributed; only its final TRAIN supervision snapshots are included. Some generic internal Freebase transport structures retain historical names; the public data-construction CLI only accepts CWQ.
+WebQSP inference configurations/launchers, evaluation experiments and trace replay tools are not distributed; only its TRAIN supervision exports are included. The public data-construction CLI only accepts CWQ.
 
 The inference package is consolidated into **28 Python files**. Closely related
 helpers share a module; rules, prompts, score weights and query/model budgets
@@ -34,7 +34,7 @@ caches keep separate names to prevent collisions.
 | `__init__.py` | Package exports |
 
 Legacy helper-module import paths have been replaced by these grouped modules.
-The documented CLI commands are unchanged. Dataset-construction source modules
+Dataset-construction source modules
 remain separate because they form a different, independently usable workflow.
 
 ## Install
@@ -49,10 +49,11 @@ Python 3.11+ is required. Model servers and Freebase must be provided separately
 
 ## Runtime inputs
 
-The public SFT snapshots are documented in [data/train/README.md](data/train/README.md).
-They are byte-identical model-training inputs and do not automatically replace
-the runtime retrieval files below. The existing inference configuration and
-retrieval behavior are unchanged by publishing these data.
+The public SFT exports are documented in [data/train/README.md](data/train/README.md).
+They preserve historical questions and targets, with a documented instruction-only
+cleanup in CWQ decomposition, and do not automatically replace the runtime
+retrieval files below. Publishing these data does not retrain the models or
+modify the retrieval configuration.
 
 Put your own CWQ inputs under ignored `assets/`:
 
@@ -104,6 +105,29 @@ QUESTION_WORKERS=4 bash scripts/run_cwq.sh \
 Only question and provided entity links enter initial decomposition; source gold answers/SPARQL are not inserted. This project retains the original gold-entity input protocol. The example API names/paths must match your deployed models. If you do not want GLM review, add `--no-decomposition-review`.
 
 Outputs are generated under ignored `outputs/`. Internal in-memory stage evidence remains necessary for the runtime safety/recovery code; no historical trace is shipped. The launcher does not request separate per-question artifact files. The GLM model switch can change predictions: this release does not claim to reproduce previously reported GLM-5.3 metrics without a new run.
+
+## Evaluation and publication cleanup
+
+Only the primary score is produced: precision, recall, F1, Hit (`hits_at_1`),
+and exact set match. Entity answers use canonical Freebase IDs; literal/text
+answers retain the normalized text-set protocol. There are no auxiliary
+substring-label scores. Artifact comparisons and optional baseline-zero
+filters also use the primary score (`--baseline-f1-zero-only` or
+`--baseline-all-f1-zero-only`).
+
+The existing aggregation policy is unchanged: metrics are macro-averaged over
+successful labeled rows; pipeline errors are written separately and excluded
+from that denominator. Always report the processed, scored and error counts;
+successful-row averages must not be presented as full-test averages when
+errors occurred.
+
+The publication cleanup generalizes method-specific wording in Review and
+construction prompts, neutralizes script/configuration names, and removes
+auxiliary label metrics. The primary scoring formula and retrieval budgets
+are unchanged. Prompt wording has changed, so a fresh model run is required
+before claiming identical end-to-end predictions. Dataset provenance and
+required third-party license notices are deliberately preserved in
+[data/train/NOTICE.md](data/train/NOTICE.md).
 
 ## Publication boundary
 

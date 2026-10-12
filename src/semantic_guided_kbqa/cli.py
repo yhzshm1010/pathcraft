@@ -14,6 +14,7 @@ from .evaluation import (
     evaluation_metadata,
     is_error_result_row,
     is_metric_result_row,
+    primary_result_row,
     row_id_f1_recall_are_all_one,
     score_result_row,
     summarize_result_rows,
@@ -339,24 +340,24 @@ def build_parser() -> argparse.ArgumentParser:
         default="",
         help=(
             "Optional artifacts directory from a previous run. Per-question "
-            "ID and KaeDe metric deltas are printed and persisted by logical index."
+            "Primary metric deltas are printed and persisted by logical index."
         ),
     )
     baseline_zero_group = parser.add_mutually_exclusive_group()
     baseline_zero_group.add_argument(
-        "--baseline-kaede-f1-zero-only",
+        "--baseline-f1-zero-only",
         action="store_true",
         help=(
             "Run only selected questions whose baseline artifact completed without "
-            "failure and has KaeDe label F1 exactly equal to zero. Requires "
+            "failure and has primary F1 exactly equal to zero. Requires "
             "--baseline-artifacts-dir."
         ),
     )
     baseline_zero_group.add_argument(
-        "--baseline-all-kaede-f1-zero-only",
+        "--baseline-all-f1-zero-only",
         action="store_true",
         help=(
-            "Run every selected question whose baseline KaeDe label F1 is "
+            "Run every selected question whose baseline primary F1 is "
             "exactly zero, including baseline pipeline-failure rows. Requires "
             "--baseline-artifacts-dir."
         ),
@@ -449,20 +450,20 @@ def main() -> None:
             f"baseline artifacts directory does not exist: {baseline_artifacts_dir}"
         )
     baseline_zero_filter_enabled = (
-        args.baseline_kaede_f1_zero_only
-        or args.baseline_all_kaede_f1_zero_only
+        args.baseline_f1_zero_only
+        or args.baseline_all_f1_zero_only
     )
     if baseline_zero_filter_enabled:
         if baseline_artifacts_dir is None:
             raise ValueError(
-                "a baseline KaeDe-F1-zero filter requires --baseline-artifacts-dir"
+                "a baseline F1-zero filter requires --baseline-artifacts-dir"
             )
-        include_baseline_failures = args.baseline_all_kaede_f1_zero_only
+        include_baseline_failures = args.baseline_all_f1_zero_only
         selected_before_filter = len(selected_questions)
         selected_questions = [
             (index, question)
             for index, question in selected_questions
-            if _baseline_kaede_f1_is_zero(
+            if _baseline_f1_is_zero(
                 baseline_artifacts_dir,
                 index=index,
                 question=question,
@@ -473,9 +474,9 @@ def main() -> None:
             json.dumps(
                 {
                     "baseline_filter": (
-                        "all_kaede_f1_zero_only"
+                        "all_f1_zero_only"
                         if include_baseline_failures
-                        else "successful_kaede_f1_zero_only"
+                        else "successful_f1_zero_only"
                     ),
                     "selected_before_filter": selected_before_filter,
                     "selected_after_filter": len(selected_questions),
@@ -741,14 +742,14 @@ def _has_recovery_details(value: Any) -> bool:
     return False
 
 
-def _baseline_successful_kaede_f1_is_zero(
+def _baseline_successful_f1_is_zero(
     baseline_root: Path,
     *,
     index: int,
     question: str,
 ) -> bool:
-    """Return whether a baseline row is successful and has exact KaeDe F1=0."""
-    return _baseline_kaede_f1_is_zero(
+    """Return whether a baseline row is successful and has primary F1=0."""
+    return _baseline_f1_is_zero(
         baseline_root,
         index=index,
         question=question,
@@ -756,14 +757,14 @@ def _baseline_successful_kaede_f1_is_zero(
     )
 
 
-def _baseline_kaede_f1_is_zero(
+def _baseline_f1_is_zero(
     baseline_root: Path,
     *,
     index: int,
     question: str,
     include_failures: bool,
 ) -> bool:
-    """Return whether the matching baseline row has exact KaeDe F1=0."""
+    """Return whether the matching baseline row has primary F1=0."""
     question_dir = baseline_root / f"{index:06d}"
     evaluation_path = question_dir / "evaluation.json"
     result_path = question_dir / "result.json"
@@ -780,7 +781,7 @@ def _baseline_kaede_f1_is_zero(
         return False
     if result.get("failure") and not include_failures:
         return False
-    score = evaluation.get("kaede_label_score", {})
+    score = evaluation.get("score", {})
     return isinstance(score, dict) and score.get("f1") == 0
 
 
@@ -860,11 +861,6 @@ def _question_metric_delta(
             "score",
             ("precision", "recall", "f1", "hits_at_1", "exact_match"),
         ),
-        "kaede_label": block_delta(
-            "kaede_label_score",
-            "kaede_label_score",
-            ("precision", "recall", "f1", "hit"),
-        ),
         "failure_changed": baseline_failure != current.get("failure"),
         "previous_failure": baseline_failure,
         "current_failure": current.get("failure"),
@@ -934,9 +930,6 @@ def _write_question_artifacts(
             "gold_answer_labels": row.get("gold_answer_labels", []),
             "score": row.get("score", {}),
             "score_basis": row.get("score_basis"),
-            "raw_text_score": row.get("raw_text_score", {}),
-            "normalized_label_score": row.get("normalized_label_score", {}),
-            "kaede_label_score": row.get("kaede_label_score", {}),
             "delta": row.get("delta"),
         },
     )
@@ -950,9 +943,6 @@ def _write_question_artifacts(
         "gold_answer_labels",
         "score",
         "score_basis",
-        "raw_text_score",
-        "normalized_label_score",
-        "kaede_label_score",
     }
     _write_json_atomic(
         question_dir / "result.json",
@@ -1142,15 +1132,15 @@ def _load_resume_state(output: Path, errors_path: Path) -> dict[str, Any]:
     errors_payload = _read_json_object(errors_path) if errors_path.is_file() else {}
     for payload in (main_payload, errors_payload):
         version = payload.get("evaluation", {}).get("version")
-        if version and version != EVALUATION_VERSION:
-            raise ValueError("Evaluation protocol changed; run scripts/rescore_results.py into a new run directory before resuming, or start a new run")
+        if version and version not in {EVALUATION_VERSION, "webqsp-id-aware-v2"}:
+            raise ValueError("Evaluation protocol changed; use a new run directory")
     main_rows = main_payload.get("rows", [])
     error_rows = errors_payload.get("rows", [])
     if not isinstance(main_rows, list) or not isinstance(error_rows, list):
         raise ValueError("resume outputs must contain list-valued rows")
-    state["successful_rows"] = [row for row in main_rows if isinstance(row, dict)]
-    state["error_rows_data"] = [row for row in error_rows if isinstance(row, dict)]
-    state["summary"] = (
+    state["successful_rows"] = [primary_result_row(row) for row in main_rows if isinstance(row, dict)]
+    state["error_rows_data"] = [primary_result_row(row) for row in error_rows if isinstance(row, dict)]
+    state["summary"] = _primary_summary(
         main_payload.get("summary", {})
         if isinstance(main_payload.get("summary", {}), dict)
         else {}
@@ -1382,30 +1372,12 @@ def _merge_summaries(previous: dict[str, Any], current: dict[str, Any]) -> dict[
         merged[key] = (
             previous_count * previous_value + current_count * current_value
         ) / total
-    for key in ("normalized_label", "kaede_label"):
-        previous_block = previous.get(key, {})
-        current_block = current.get(key, {})
-        if not isinstance(previous_block, dict):
-            previous_block = {}
-        if not isinstance(current_block, dict):
-            current_block = {}
-        previous_block_count = _stored_int(previous_block.get("scored"), 0)
-        current_block_count = _stored_int(current_block.get("scored"), 0)
-        block_total = previous_block_count + current_block_count
-        if block_total == 0:
-            continue
-        merged[key] = {
-            "scored": block_total,
-            **{
-                metric: (
-                    previous_block_count * float(previous_block.get(metric, 0.0) or 0.0)
-                    + current_block_count * float(current_block.get(metric, 0.0) or 0.0)
-                )
-                / block_total
-                for metric in ("precision", "recall", "f1", "hit")
-            },
-        }
     return merged
+
+
+def _primary_summary(summary: dict[str, Any]) -> dict[str, Any]:
+    """Migrate stored aggregates by dropping auxiliary label-score blocks."""
+    return {key: value for key, value in summary.items() if not key.endswith("_label")}
 
 
 def _subtract_summaries(total_summary: dict[str, Any], removed: dict[str, Any]) -> dict[str, Any]:
@@ -1420,7 +1392,7 @@ def _subtract_summaries(total_summary: dict[str, Any], removed: dict[str, Any]) 
     )
     remaining_count = total_count - removed_count
     if removed_count == 0:
-        return dict(total_summary)
+        return _primary_summary(total_summary)
     if remaining_count <= 0:
         return {}
 
@@ -1455,27 +1427,6 @@ def _subtract_summaries(total_summary: dict[str, Any], removed: dict[str, Any]) 
         result[metric] = (
             total_count * total_value - removed_count * removed_value
         ) / remaining_count
-    for key in ("normalized_label", "kaede_label"):
-        total_block = total_summary.get(key, {})
-        removed_block = removed.get(key, {})
-        if not isinstance(total_block, dict) or not isinstance(removed_block, dict):
-            continue
-        total_block_count = _stored_int(total_block.get("scored"), 0)
-        removed_block_count = _stored_int(removed_block.get("scored"), 0)
-        remaining_block_count = total_block_count - removed_block_count
-        if remaining_block_count <= 0:
-            continue
-        result[key] = {
-            "scored": remaining_block_count,
-            **{
-                metric: (
-                    total_block_count * float(total_block.get(metric, 0.0) or 0.0)
-                    - removed_block_count * float(removed_block.get(metric, 0.0) or 0.0)
-                )
-                / remaining_block_count
-                for metric in ("precision", "recall", "f1", "hit")
-            },
-        }
     return result
 
 

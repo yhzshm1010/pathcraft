@@ -135,7 +135,7 @@ class DecompositionStore:
     def load(cls, path: str | Path) -> "DecompositionStore":
         predictions: dict[str, list[DecompositionCandidate]] = {}
         for row in _load_array(path, role="decompose"):
-            # KaeDe/vLLM prediction files and the gpt54 flywheel training
+            # CWQ/vLLM prediction files and the gpt54 flywheel training
             # arrays both use an Alpaca wrapper (``input``/``output`` are
             # JSON strings).  Keep accepting the older direct-dict form as
             # well; ``parse_json_object`` handles either representation.

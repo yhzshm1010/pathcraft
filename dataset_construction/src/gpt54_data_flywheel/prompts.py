@@ -41,7 +41,7 @@ STRICT_DECOMPOSITION_REWRITE_INSTRUCTIONS = r"""Strict natural-language decompos
   Return JSON only."""
 
 
-KAEDE_SOURCE_DECOMPOSITION_ALIGNMENT = r"""The supplied decomposition uses the KaeDe path-level
+SOURCE_DECOMPOSITION_ALIGNMENT = r"""The supplied decomposition uses the CWQ path-level
 format. Treat each decomposition item as exactly one complete entity-centric KG path. A single
 item may contain multiple hop-wise questions or statements; do not split those sentences into
 separate paths. Preserve the item order and preserve the supplied decomposition text verbatim in
@@ -70,8 +70,8 @@ STRICT_DECOMPOSE_SFT_INSTRUCTION = (
 )
 
 
-KAEDE_DECOMPOSE_SFT_INSTRUCTION = (
-    "[TASK=DECOMPOSE] Use the KaeDe path-level decomposition format for CWQ. Return one "
+PATH_DECOMPOSE_SFT_INSTRUCTION = (
+    "[TASK=DECOMPOSE] Use the CWQ path-level decomposition format. Return one "
     "item per complete entity-centric KG path. Each item may contain multiple hop-wise "
     "questions or statements for that same path; do not split those hop expressions into "
     "separate items. Preserve path order, explicit entities, dates, constraints, and the "
@@ -358,7 +358,7 @@ WEBQSP_SOURCE_GUIDANCE = (
 )
 
 
-GATEWAY_SEMANTIC_INSTRUCTIONS = f"""Rewrite one KAeDe-VQG semantic graph without changing
+GATEWAY_SEMANTIC_INSTRUCTIONS = f"""Rewrite one Freebase KBQA semantic graph without changing
 the question meaning. Return only JSON with anchors, semantic_paths, operators. Each
 anchor has id,surface. Each path has id,anchor_ref,goal,steps,path_output_var; each step
 has id,relation_label,direction,from,to. Use reversible relation-label arrays and Pn.Vm
@@ -370,7 +370,7 @@ IDs or SPARQL. {GATEWAY_JOIN_RULES}
 {WEBQSP_SOURCE_GUIDANCE}"""
 
 
-GATEWAY_COMPOSE_INSTRUCTIONS = f"""Build one complete KAeDe-VQG compose JSON object from
+GATEWAY_COMPOSE_INSTRUCTIONS = f"""Build one complete Freebase KBQA compose JSON object from
 the verified semantic graph. Return only entities,triples,operators,answer_var. Entities
 have id,surface; triples have subject,relation_label,object. Use E0/E1 entities and V0/V1
 global variables. Lower AND by sharing variables; map every unary operator input_var from
@@ -379,7 +379,7 @@ Pn.Vm to Vn and preserve all other fields. No KB IDs or SPARQL. {GATEWAY_JOIN_RU
 {WEBQSP_SOURCE_GUIDANCE}"""
 
 
-GATEWAY_VERIFY_INSTRUCTIONS = f"""Strictly verify one rewritten KAeDe-VQG training pair
+GATEWAY_VERIFY_INSTRUCTIONS = f"""Strictly verify one rewritten Freebase KBQA training pair
 against its question, decomposition, source graphs, joins, directions, answer projection,
 and operators. Return only JSON with status,issues,semantic_graph,compose_program. status
 is pass only if candidates are unchanged; corrected only with complete reliable corrected
@@ -491,7 +491,7 @@ CWQ_GATEWAY_DECOMPOSE_VERIFY_INSTRUCTIONS = (
 )
 
 
-SEMANTIC_INSTRUCTIONS = f"""You rewrite supervised Freebase KBQA data for KAeDe-VQG.
+SEMANTIC_INSTRUCTIONS = f"""You rewrite supervised Freebase KBQA data for Freebase KBQA.
 Return one semantic graph, not an answer to the question. Preserve the source example's
 meaning while correcting only clear structural defects. Use canonical reversible
 relation_label segments and path-local variables P0.V0, P0.V1, etc. Anchors must be
@@ -522,7 +522,7 @@ answer_var. Do not emit dotted Freebase IDs or SPARQL.
 Now return only the complete compose program for the supplied request."""
 
 
-VERIFY_INSTRUCTIONS = f"""Act as an independent, strict reviewer of one rewritten KAeDe-VQG
+VERIFY_INSTRUCTIONS = f"""Act as an independent, strict reviewer of one rewritten Freebase KBQA
 training pair. Check the original question, decomposition, source labels, rewritten
 semantic paths, answer projection, joins, relation directions, entity surfaces, and every
 operator. The rewritten pair must be answer-equivalent to the source. Check AND lowering
@@ -583,9 +583,9 @@ Use canonical relation labels only. Do not emit KB IDs, raw SPARQL, or dotted Fr
 Return JSON only."""
 
 
-KAEDE_SEMANTIC_SFT_INSTRUCTION = (
+PATH_SEMANTIC_SFT_INSTRUCTION = (
     SEMANTIC_SFT_INSTRUCTION
-    + "\nThe input decomposition uses KaeDe path-level format. Emit exactly one semantic path "
+    + "\nThe input decomposition uses CWQ path-level format. Emit exactly one semantic path "
     "for each decomposition item in the same order. A decomposition item may contain multiple "
     "hop-wise questions or statements. Copy decomposition[i] verbatim into "
     "semantic_paths[i].goal; do not split, merge, reorder, or paraphrase path goals."

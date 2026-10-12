@@ -225,7 +225,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--preserve-source-decomposition",
         action=argparse.BooleanOptionalAction,
         default=False,
-        help="freeze the source KaeDe path skeleton; default is gold-first correction",
+        help="freeze the source CWQ path skeleton; default is gold-first correction",
     )
     parser.add_argument(
         "--accept",

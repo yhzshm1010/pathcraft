@@ -17,7 +17,7 @@ import re
 import urllib.parse
 import urllib.request
 from typing import Any
-import zipfile
+from source_annotations import load_source_annotations
 
 
 NS = "http://rdf.freebase.com/ns/"
@@ -157,7 +157,7 @@ def entities_and_bindings(golden_entities: dict[str, str]) -> tuple[list[dict[st
 
 
 def enrich_golden_entities(row: dict[str, Any]) -> dict[str, str]:
-    """Recover KaeDe path anchors omitted from golden_entities metadata."""
+    """Recover CWQ path anchors omitted from golden_entities metadata."""
     entities = {str(key): str(value) for key, value in row.get("golden_entities", {}).items()}
     for info in row.get("reasoning_information", []):
         entity_id = str(info.get("entity", ""))
@@ -223,7 +223,7 @@ def build_semantic_paths(
     compose: dict[str, Any],
     var_map: dict[str, str],
 ) -> dict[str, Any]:
-    """Build entity-centric paths from Gold graph topology and KaeDe path order."""
+    """Build entity-centric paths from Gold graph topology and CWQ path order."""
     golden_entities = row.get("golden_entities", {})
     anchor_by_entity = {
         str(entity_id): {
@@ -245,7 +245,7 @@ def build_semantic_paths(
         if str(item.get("decomposed", "")).strip()
     ]
     if not decomposition:
-        raise ValueError("Gold row has no KaeDe decomposition")
+        raise ValueError("Gold row has no CWQ decomposition")
     paths: list[dict[str, Any]] = []
     used_edges: set[tuple[str, str, str]] = set()
     for path_index, info in enumerate(row["reasoning_information"]):
@@ -253,7 +253,7 @@ def build_semantic_paths(
             break
         anchor = anchor_by_entity.get(str(info.get("entity", "")))
         if anchor is None:
-            raise ValueError("KaeDe anchor is absent from golden_entities")
+            raise ValueError("CWQ anchor is absent from golden_entities")
         current = str(anchor["entity_ref"])
         anchor_surface = str(anchor["surface"])
         path_id = f"P{path_index}"
@@ -261,7 +261,7 @@ def build_semantic_paths(
         relations = list(info.get("relation", []))
         directions = list(info.get("direction", []))
         if len(relations) != len(directions):
-            raise ValueError("KaeDe relation/direction length mismatch")
+            raise ValueError("CWQ relation/direction length mismatch")
         for step_index, (relation, direction) in enumerate(zip(relations, directions)):
             relation_parts = relation_label(str(relation))
             choices = [
@@ -270,7 +270,7 @@ def build_semantic_paths(
                 if item[1]["relation_label"] == relation_parts and item[2] == str(direction)
             ]
             if not choices:
-                # A few historical KaeDe labels differ only in wording.  The
+                # A few processed TRAIN labels differ only in wording. The
                 # Gold graph remains authoritative, so use the unique edge in
                 # the requested direction when it exists.
                 choices = [item for item in adjacency.get(current, []) if item[2] == str(direction)]
@@ -826,9 +826,10 @@ def execute_sparql(sparql: str, endpoint: str) -> set[str]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--kaede-archive", type=Path, default=Path(__file__).resolve().parents[1] / "inputs/KaeDe-main.zip")
+    parser.add_argument("--source-archive", type=Path, default=Path(__file__).resolve().parents[1] / "inputs/cwq_source_annotations.zip")
+    parser.add_argument("--source-member", default="", help="Optional exact member in the source ZIP.")
     parser.add_argument("--selection", type=Path, default=Path(__file__).resolve().parents[1] / "inputs/candidate_selection.json")
-    parser.add_argument("--all-appended", action="store_true", help="compile every KaeDe row not matched to the retained 19,518-row prefix")
+    parser.add_argument("--all-appended", action="store_true", help="compile every CWQ row not matched to the retained 19,518-row prefix")
     parser.add_argument("--max-rows", type=int, default=0, help="optional deterministic limit after selection")
     parser.add_argument("--exclude-semantic", type=Path, action="append", default=[], help="exclude questions already present in one or more semantic training arrays")
     parser.add_argument("--output-dir", type=Path, default=Path(__file__).resolve().parents[1] / "work/cwq_gold_first")
@@ -840,8 +841,7 @@ def main() -> None:
     parser.add_argument("--endpoint", default="http://127.0.0.1:3005/sparql")
     parser.add_argument("--no-gold-source-fallback", action="store_true", help="require the lowered Compose/Operator query itself to match Gold")
     args = parser.parse_args()
-    with zipfile.ZipFile(args.kaede_archive) as archive:
-        rows = json.loads(archive.read("KaeDe-main/data/processed/CWQ/CWQ_train_extracted.json"))
+    rows, _, _ = load_source_annotations(args.source_archive, args.source_member)
     if args.all_appended:
         base_rows = load(args.train_dir / "decompose_train.json")
         def question_key(value: str) -> str:

@@ -229,7 +229,7 @@ chains even when a shorter fluent paraphrase seems possible.
 
 CWQ_DECOMPOSITION_STYLE = """
 CWQ STYLE
-Use short connected questions or statements in the KaeDe path-level format. One array
+Use short connected questions or statements in the CWQ path-level format. One array
 item may contain multiple connected hops. A separate item is appropriate for a clear
 constraint, but it must identify the same candidate set or bridge record. Prefer
 "Which X has Y? Which attribute does that same X have?" over disconnected prose.
@@ -243,11 +243,11 @@ Do not create a new pronoun-only item such as "which of those" for a filter, ext
 or terminal hop. When a condition has no independent named anchor, keep it attached
 to the same entity-centric path and name the bridge/record that owns it. Split paths
 only when each side has a real anchor and Compose can unify their terminal candidate.
-Preserve terse trained KaeDe relation wording when it is semantically complete; do
+Preserve terse trained CWQ relation wording when it is semantically complete; do
 not replace it with fluent prose that the downstream Semantic model was not trained on.
 
 REWRITE DIALECT
-A rewrite must remain in the same terse KaeDe dialect as the input: short
+A rewrite must remain in the same terse CWQ dialect as the input: short
 "ENTITY is the RELATION of the TYPE" statements and connected "What/Who is the
 RELATION of the TYPE?" questions. Do not output explanatory graph prose such as
 "lists ... in its field", "follow this route", "matching performance", or
@@ -259,7 +259,7 @@ Use the exact supplied entity_context name for an entity mention, including spel
 and punctuation. Do not substitute a related person, parent, league, region or alias
 whose ID differs. When a relation is reified, retain each trained CVT hop rather than
 collapsing it into a fluent plural relation. For an intersection, keep independently
-anchored constraints as separate KaeDe items and let Compose unify their candidate
+anchored constraints as separate CWQ items and let Compose unify their candidate
 terminal; prose saying "the same entity" cannot replace a groundable path.
 """.strip()
 
@@ -338,7 +338,7 @@ CWQ_ENTITY_CONTEXT_REWRITE_INSTRUCTION = "\n\n".join([
     TEMPORAL_NUMERIC_POLICY, CWQ_TEMPORAL_NUMERIC_BOUNDARY_POLICY,
     CWQ_DECOMPOSITION_STYLE,
     cwq_examples("rewrite", include_entity_context=True),
-    "SECOND and FINAL call: check the supplied issues against the original question and entity_context. Repair only supported defects. Preserve correct KaeDe paths and return only {\"decomposition\": [non-empty English path strings]}; no metadata, facts, KB IDs, SPARQL, operators, explanations or fences.",
+    "SECOND and FINAL call: check the supplied issues against the original question and entity_context. Repair only supported defects. Preserve correct CWQ paths and return only {\"decomposition\": [non-empty English path strings]}; no metadata, facts, KB IDs, SPARQL, operators, explanations or fences.",
 ])
 
 REVIEW_SCHEMA = {

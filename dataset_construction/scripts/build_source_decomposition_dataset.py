@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Replace CWQ decomposition targets with their original KaeDe targets.
+"""Replace CWQ decomposition targets with the supplied source annotations.
 
 The outer Alpaca rows, including instruction, input, and history, are copied
 verbatim from the current dataset. Only ``output.decomposition`` is replaced.
@@ -14,14 +14,13 @@ import hashlib
 import json
 import re
 from pathlib import Path
-import zipfile
+from source_annotations import load_source_annotations
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CURRENT = PROJECT_ROOT / "data/cwq_19518/decompose_train.json"
-DEFAULT_ARCHIVE = PROJECT_ROOT / "inputs/KaeDe-main.zip"
-DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "data/cwq_19518_kaede_decomposition"
-KAEDE_MEMBER = "KaeDe-main/data/processed/CWQ/CWQ_train_extracted.json"
+DEFAULT_ARCHIVE = PROJECT_ROOT / "inputs/cwq_source_annotations.zip"
+DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "data/cwq_19518_source_decomposition"
 
 
 def _object(value):
@@ -40,17 +39,15 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def build(current_path: Path, archive_path: Path, output_dir: Path) -> dict:
+def build(current_path: Path, archive_path: Path, output_dir: Path, source_member: str = "") -> dict:
     current = json.loads(current_path.read_text(encoding="utf-8"))
     if not isinstance(current, list):
         raise ValueError(f"{current_path} must contain a JSON array")
 
-    with zipfile.ZipFile(archive_path) as archive:
-        member_bytes = archive.read(KAEDE_MEMBER)
-    kaede_rows = json.loads(member_bytes)
+    source_rows, selected_member, member_bytes = load_source_annotations(archive_path, source_member)
 
     groups: dict[str, list[dict]] = defaultdict(list)
-    for source_index, row in enumerate(kaede_rows):
+    for source_index, row in enumerate(source_rows):
         decomposition = [
             str(item.get("decomposed", "")).strip()
             for item in row.get("reasoning_information", [])
@@ -82,7 +79,7 @@ def build(current_path: Path, archive_path: Path, output_dir: Path) -> dict:
         ]
         if not candidates:
             raise ValueError(
-                f"row {row_index}: no unused KaeDe source row for {question!r}"
+                f"row {row_index}: no unused CWQ source row for {question!r}"
             )
 
         # Repeated CWQ question strings are paired by exact target first. This
@@ -97,18 +94,18 @@ def build(current_path: Path, archive_path: Path, output_dir: Path) -> dict:
         )
         selected["used"] = True
         source_indices.append(int(selected["source_index"]))
-        kaede_decomposition = list(selected["decomposition"])
+        source_decomposition = list(selected["decomposition"])
 
         copied = deepcopy(row)
         copied_output = dict(output_object)
-        copied_output["decomposition"] = kaede_decomposition
+        copied_output["decomposition"] = source_decomposition
         copied["output"] = (
             _dump(copied_output)
             if isinstance(row.get("output"), str)
             else copied_output
         )
         output.append(copied)
-        if kaede_decomposition == current_decomposition:
+        if source_decomposition == current_decomposition:
             same += 1
         else:
             replaced += 1
@@ -134,11 +131,11 @@ def build(current_path: Path, archive_path: Path, output_dir: Path) -> dict:
             {_question_key(_object(row["input"])["question"]) for row in output}
         ),
         "same_as_current_before_replacement": same,
-        "replaced_with_kaede_target": replaced,
-        "all_targets_from_kaede": True,
-        "kaede_archive": str(archive_path.resolve()),
-        "kaede_member": KAEDE_MEMBER,
-        "kaede_member_sha256": hashlib.sha256(member_bytes).hexdigest(),
+        "replaced_with_source_target": replaced,
+        "all_targets_from_source": True,
+        "source_archive": str(archive_path.resolve()),
+        "source_member": selected_member,
+        "source_member_sha256": hashlib.sha256(member_bytes).hexdigest(),
         "current_dataset_sha256": _sha256(current_path),
         "output_sha256": _sha256(output_path),
         "source_index_min": min(source_indices),
@@ -149,7 +146,7 @@ def build(current_path: Path, archive_path: Path, output_dir: Path) -> dict:
         encoding="utf-8",
     )
     dataset_info = {
-        "cwq_decompose_kaede_19518": {
+        "cwq_decompose_source_19518": {
             "file_name": "decompose_train.json",
             "formatting": "alpaca",
             "columns": {
@@ -170,10 +167,11 @@ def build(current_path: Path, archive_path: Path, output_dir: Path) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--current", type=Path, default=DEFAULT_CURRENT)
-    parser.add_argument("--kaede-archive", type=Path, default=DEFAULT_ARCHIVE)
+    parser.add_argument("--source-archive", type=Path, default=DEFAULT_ARCHIVE)
+    parser.add_argument("--source-member", default="", help="Optional exact member in the source ZIP.")
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     args = parser.parse_args()
-    manifest = build(args.current, args.kaede_archive, args.output_dir)
+    manifest = build(args.current, args.source_archive, args.output_dir, args.source_member)
     print(json.dumps(manifest, ensure_ascii=False, indent=2))
 
 

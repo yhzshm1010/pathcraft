@@ -46,7 +46,7 @@ provenance/
 !/data/train/manifest.json
 !/data/train/licenses/
 /data/train/licenses/*
-!/data/train/licenses/KaeDe-MIT.txt
+!/data/train/licenses/upstream-MIT.txt
 !/data/train/cwq/
 /data/train/cwq/*
 !/data/train/cwq/decompose_train.json

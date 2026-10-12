@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import importlib
 import json
 import os
 from pathlib import Path
@@ -11,7 +12,6 @@ from typing import Any
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_KAEDE_SRC = REPO_ROOT / "vendor" / "kaede_vqg" / "src"
 FREEBASE_NS = "http://rdf.freebase.com/ns/"
 MID_RE = re.compile(r"^[mg]\.[A-Za-z0-9_]+$")
 SPARQL_MID_RE = re.compile(r"\bns:(?P<mid>[mg]\.[A-Za-z0-9_]+)\b")
@@ -66,14 +66,12 @@ def validate(payload: dict[str, Any]) -> dict[str, Any]:
         if not gold_sparql:
             return _reject(f"{source_key}.sparql is empty; cannot execution-validate this row")
 
-        _ensure_kaede_import()
-        from kaede_vqg.freebase import (  # noqa: PLC0415
-            FreebaseConfig,
-            FreebaseGroundingBackend,
-            FreebaseQueryBackend,
-            FreebaseSparqlClient,
-            GoldenEntityLinker,
-        )
+        backend = _execution_backend()
+        FreebaseConfig = backend.FreebaseConfig
+        FreebaseGroundingBackend = backend.FreebaseGroundingBackend
+        FreebaseQueryBackend = backend.FreebaseQueryBackend
+        FreebaseSparqlClient = backend.FreebaseSparqlClient
+        GoldenEntityLinker = backend.GoldenEntityLinker
 
         config = FreebaseConfig.from_env()
         client = FreebaseSparqlClient(config)
@@ -186,10 +184,20 @@ def _read_payload() -> dict[str, Any]:
     return payload
 
 
-def _ensure_kaede_import() -> None:
-    src = Path(os.environ.get("KAEDE_VQG_SRC") or DEFAULT_KAEDE_SRC).resolve()
-    if str(src) not in sys.path:
-        sys.path.insert(0, str(src))
+def _execution_backend() -> Any:
+    """Load an explicitly configured external executor; never invent a backend."""
+    source = os.environ.get("FREEBASE_EXECUTOR_SRC", "").strip()
+    if source:
+        src = str(Path(source).expanduser().resolve())
+        if src not in sys.path:
+            sys.path.insert(0, src)
+    module = os.environ.get("FREEBASE_EXECUTOR_MODULE", "").strip()
+    if not module:
+        raise RuntimeError(
+            "set FREEBASE_EXECUTOR_MODULE and, if needed, FREEBASE_EXECUTOR_SRC; "
+            "see the executor integration note in data/train/NOTICE.md"
+        )
+    return importlib.import_module(module)
 
 
 def _answer_set_from_sparql_payload(payload: dict[str, Any]) -> set[str]:
@@ -249,7 +257,7 @@ def _prepare_candidate_graph(
                 "LESS_OR_EQUAL",
             }:
                 # ``number`` is the public correction-contract type, but it is
-                # not an XML Schema datatype.  Passing it through makes KaeDe
+                # not an XML Schema datatype. Passing it through makes the compiler
                 # emit ``xsd:number``, which Virtuoso may compare
                 # lexicographically or ignore.  Keep the persisted correction
                 # unchanged and select a real XSD numeric datatype only for
@@ -272,7 +280,7 @@ def _prepare_candidate_graph(
             if isinstance(relation_ids, list) and relation_ids and all(
                 isinstance(value, str) for value in relation_ids
             ):
-                # KaeDe treats a flat string list as one semantic relation label.
+                # The external backend treats a flat list as one relation label.
                 # Keep materialized TC interval bounds as distinct relation IDs.
                 operator["attribute_relation_ids"] = [[value] for value in relation_ids]
     return prepared
@@ -284,7 +292,7 @@ def _restore_gold_predicate_casing(
 ) -> dict[str, Any]:
     """Restore case-sensitive legacy Freebase predicates from gold evidence.
 
-    KAeDe case-folds human-readable relation labels.  Most Freebase predicates
+    Source preprocessing case-folds relation labels. Most Freebase predicates
     are lowercase, but legacy predicates such as ``Kind_of_symbol`` are not.
     Only the casing is restored: the grounded predicate must otherwise match a
     predicate in the read-only gold query case-insensitively.
@@ -320,16 +328,14 @@ def _restore_gold_predicate_casing(
 def _execute_candidate_graph(query_backend: Any, graph: dict[str, Any]) -> dict[str, Any]:
     """Execute with numeric casts matching CWQ's comparison semantics.
 
-    KaeDe serializes a public ``number`` operator as a typed threshold but does
+    The external compiler serializes ``number`` as a typed threshold but does
     not cast the Freebase value variable.  CWQ gold explicitly uses
     ``xsd:integer(?value)``; some Freebase numeric properties are stored as
     untyped strings, so the uncast candidate either returns every row or none.
     Only replace the exact comparison form emitted from the execution-only
-    normalization above. Other queries continue through KaeDe unchanged.
+    normalization above. Other queries use the configured backend unchanged.
     """
-    from kaede_vqg.freebase import query_graph_to_sparql  # noqa: PLC0415
-
-    sparql = query_graph_to_sparql(graph, limit=query_backend.answer_limit)
+    sparql = _execution_backend().query_graph_to_sparql(graph, limit=query_backend.answer_limit)
     casted = _cast_numeric_comparison_inputs(sparql)
     if casted == sparql:
         return query_backend.execute(graph)
