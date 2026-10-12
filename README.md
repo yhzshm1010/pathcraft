@@ -2,7 +2,7 @@
 
 ComplexWebQuestions (CWQ) question inference and stage-aligned dataset construction in one repository. The inference implementation follows the final Full stability-fix mainline; no ablation or replay implementation is included. GLM calls default to **glm-5.2**.
 
-This is a **code-only release**. It does not contain benchmark datasets, generated training arrays, model weights, Freebase dumps, retrieval cache outputs, traces, logs, intermediate experiments, or historical predictions/results. Small frozen prompt examples and scoring parameters are required runtime resources, not per-question execution traces. Third-party inputs retain their original terms; they are not redistributed here.
+This release includes **code and the final CWQ/WebQSP stage-aligned TRAIN snapshots** in `data/train/`. It does not contain raw benchmark archives, dev/test exports, model weights, Freebase dumps, retrieval cache outputs, traces, logs, intermediate experiments, or historical predictions/results. Small frozen prompt examples and scoring parameters are required runtime resources, not per-question execution traces. Underlying datasets retain their original terms; see `data/train/NOTICE.md`.
 
 ## Layout
 
@@ -11,8 +11,9 @@ This is a **code-only release**. It does not contain benchmark datasets, generat
 - `prompts/`: frozen CWQ reviewer policies.
 - `scripts/`: local asset import, question-only decomposition preparation, fresh decomposition inference, and CWQ inference launcher.
 - `dataset_construction/`: CWQ training-data generation, Gold-SPARQL construction, static/execution validation, stage splitting and export. See its README.
+- `data/train/`: four final SFT stage files per dataset: CWQ (25,328 rows per stage) and WebQSP (2,651 rows per stage), registration files, checksums and source notices. See its README.
 
-WebQSP configurations, launchers, datasets, evaluation experiments and trace replay tools are not distributed. Some generic internal Freebase transport structures retain historical names; the public data-construction CLI only accepts CWQ.
+WebQSP inference configurations/launchers, evaluation experiments and trace replay tools are not distributed; only its final TRAIN supervision snapshots are included. Some generic internal Freebase transport structures retain historical names; the public data-construction CLI only accepts CWQ.
 
 The inference package is consolidated into **28 Python files**. Closely related
 helpers share a module; rules, prompts, score weights and query/model budgets
@@ -47,6 +48,11 @@ python3 -m gpt54_data_flywheel generate --help
 Python 3.11+ is required. Model servers and Freebase must be provided separately. Configure Semantic, Compose, Operator, Selector, BGE, and Freebase addresses in `configs/pipeline.cwq.json`; defaults use localhost ports 18002, 18003, 18004, 18005, 8008, and 3005 respectively. These inference models must be your CWQ-trained models. No services are automatically started/stopped.
 
 ## Runtime inputs
+
+The public SFT snapshots are documented in [data/train/README.md](data/train/README.md).
+They are byte-identical model-training inputs and do not automatically replace
+the runtime retrieval files below. The existing inference configuration and
+retrieval behavior are unchanged by publishing these data.
 
 Put your own CWQ inputs under ignored `assets/`:
 
@@ -101,4 +107,4 @@ Outputs are generated under ignored `outputs/`. Internal in-memory stage evidenc
 
 ## Publication boundary
 
-Only the code and small required configuration/prompt resources are published. Do not commit assets, secrets, generated data, logs, model weights or results. Git history is not force-rewritten when updating an existing repository; older public commits may still contain files removed from the current tree.
+Only code, required configuration/prompt resources, and the explicitly listed final SFT TRAIN snapshots are published. Do not commit runtime assets, secrets, other generated data, logs, model weights, dev/test exports or results. New data updates use ordinary commits; previously published URLs/caches may still contain historical information.

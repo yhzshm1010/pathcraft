@@ -35,3 +35,29 @@ provenance/
 *.csv
 *.tsv
 
+# Only explicitly approved final SFT TRAIN exports are public.
+# All other datasets, raw annotations and execution artifacts remain ignored.
+!/data/
+/data/*
+!/data/train/
+/data/train/*
+!/data/train/README.md
+!/data/train/NOTICE.md
+!/data/train/manifest.json
+!/data/train/licenses/
+/data/train/licenses/*
+!/data/train/licenses/KaeDe-MIT.txt
+!/data/train/cwq/
+/data/train/cwq/*
+!/data/train/cwq/decompose_train.json
+!/data/train/cwq/semantic_path_train.json
+!/data/train/cwq/compose_train.json
+!/data/train/cwq/operator_train.json
+!/data/train/cwq/dataset_info.json
+!/data/train/webqsp/
+/data/train/webqsp/*
+!/data/train/webqsp/decompose_train.json
+!/data/train/webqsp/semantic_train.json
+!/data/train/webqsp/compose_train.json
+!/data/train/webqsp/operator_train.json
+!/data/train/webqsp/dataset_info.json

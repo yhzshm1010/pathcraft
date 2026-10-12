@@ -1,6 +1,6 @@
 # CWQ dataset construction
 
-All public commands default to CWQ TRAIN data and GLM-5.2 chat calls. Never use CWQ dev/test gold to create training data. Raw annotations and all generated arrays/ledgers stay in ignored inputs/work directories.
+All public commands default to CWQ TRAIN data and GLM-5.2 chat calls. Never use CWQ dev/test gold to create training data. Raw annotations and generated arrays/ledgers stay in ignored inputs/work directories; the explicitly approved final SFT snapshots are separately published under `../data/train/`.
 
 ## Source inputs
 
@@ -48,4 +48,4 @@ python3 dataset_construction/scripts/split_operator_dataset.py \
   --out-dir dataset_construction/work/cwq_sft
 ```
 
-All generated arrays, accepted/rejected ledgers, manifests and correction records are local outputs and Git-ignored. GLM key/model/endpoint can be configured through the documented environment variables or CLI. The underlying shared transport/validation internals retain some legacy names; no WebQSP dataset or public WebQSP generation command is included.
+All construction outputs, accepted/rejected ledgers and correction records remain local and Git-ignored. The selected final CWQ and WebQSP four-stage SFT inputs, their registration files and checksum manifest are published in `../data/train/`; no public WebQSP generation command is added. GLM key/model/endpoint can be configured through the documented environment variables or CLI. The underlying shared transport/validation internals retain some legacy names.

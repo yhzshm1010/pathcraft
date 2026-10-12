@@ -1,0 +1,76 @@
+{
+  "format": "pathcraft-training-release-v1",
+  "split": "train",
+  "content_policy": "Byte-identical final SFT stage snapshots; no test, trace, logs or weights.",
+  "question_comparison": "Whitespace-normalized casefold; WebQSP accepts official RawQuestion or ProcessedQuestion.",
+  "datasets": {
+    "cwq": {
+      "rows_per_stage": 25328,
+      "version": "cwq_25328_goldfirst_strict_v2",
+      "stages": {
+        "decomposition": {
+          "file": "decompose_train.json",
+          "rows": 25328,
+          "bytes": 19488727,
+          "sha256": "3df57446051fa8fae0e24afeb6a04e3aac48388c386f7cfee519581dd4181299"
+        },
+        "semantic": {
+          "file": "semantic_path_train.json",
+          "rows": 25328,
+          "bytes": 52028859,
+          "sha256": "2456901b4948d3d3235c48a41ccf082c9930588cc0ff66a0dc036660c83c57ac"
+        },
+        "compose": {
+          "file": "compose_train.json",
+          "rows": 25328,
+          "bytes": 63347594,
+          "sha256": "318c8fdd3278194db13c0544804a3de4315ae8a827165379c04b1688ed1c7b7c"
+        },
+        "operator": {
+          "file": "operator_train.json",
+          "rows": 25328,
+          "bytes": 44364738,
+          "sha256": "8b48e5ce3ce3c7816e1228449dccd9dcc432430dd141c23f8ebcd81e010743d7"
+        }
+      },
+      "stage_alignment_verified": true,
+      "unique_questions": 25327,
+      "all_questions_match_official_train": true,
+      "question_text_also_in_test": 2
+    },
+    "webqsp": {
+      "rows_per_stage": 2651,
+      "version": "webqsp_from_base_flywheel_2651",
+      "stages": {
+        "decomposition": {
+          "file": "decompose_train.json",
+          "rows": 2651,
+          "bytes": 1358348,
+          "sha256": "8ce2ae23ec121bca0145d3eca9eb247b219e95dc1ab3380b501991804a9c10d1"
+        },
+        "semantic": {
+          "file": "semantic_train.json",
+          "rows": 2651,
+          "bytes": 4265269,
+          "sha256": "a0f2c096ae088f1ba5282bd8789c823267adb500c7dd84eb67a31383caf1625b"
+        },
+        "compose": {
+          "file": "compose_train.json",
+          "rows": 2651,
+          "bytes": 5140107,
+          "sha256": "6fda0fb39ae994103167731e6a3f59d5322829365fa821cd5657073bde96962b"
+        },
+        "operator": {
+          "file": "operator_train.json",
+          "rows": 2651,
+          "bytes": 3979552,
+          "sha256": "8e4a2ea87dbe89677dc5c84dc70b23f607cab056de0e0d4d2194f9027b16612f"
+        }
+      },
+      "stage_alignment_verified": true,
+      "unique_questions": 2651,
+      "all_questions_match_official_train": true,
+      "question_text_also_in_test": 0
+    }
+  }
+}
