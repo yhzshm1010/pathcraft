@@ -6,7 +6,7 @@ import unicodedata
 from typing import Any, Iterable
 
 
-EVALUATION_VERSION = "answer-id-primary-v3"
+EVALUATION_VERSION = "answer-id-primary-v4-failures-zero"
 # Evaluate every WebQSP item from its configured Gold record; no question-level
 # perfect-score exceptions are injected by the runtime.
 _EMPTY_GOLD_PERFECT_QUESTIONS = frozenset()
@@ -203,7 +203,7 @@ def predicted_answer_labels(row: dict[str, Any]) -> list[str]:
 
 
 def primary_result_row(row: dict[str, Any]) -> dict[str, Any]:
-    """Remove auxiliary evaluation blocks without changing the primary score."""
+    """Drop auxiliary scores and zero labeled failures, retaining diagnostics."""
     scored = dict(row)
     for key in tuple(scored):
         if key.endswith("_label_score") or key in {"evaluation_prediction", "raw_text_score"}:
@@ -212,6 +212,23 @@ def primary_result_row(row: dict[str, Any]) -> dict[str, Any]:
         scored["delta"] = {
             key: value for key, value in scored["delta"].items()
             if not key.endswith("_label")
+        }
+    score = scored.get("score", {})
+    if is_error_result_row(scored) and (
+        (isinstance(score, dict) and score.get("labeled") is True)
+        or bool(canonicalize_answer_ids(scored.get("gold_answers", []) or []))
+        or bool(webqsp_unique_answers(scored.get("gold_answer_labels", []) or []))
+    ):
+        # A partial prediction is diagnostic evidence, not a successful answer.
+        # Missing Gold is never silently turned into a labeled zero-score item.
+        scored["score"] = {
+            "labeled": True,
+            "exact": False,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "hits_at_1": 0.0,
+            "exact_match": 0.0,
         }
     return scored
 
@@ -247,17 +264,18 @@ def score_result_row(record: dict[str, Any], row: dict[str, Any]) -> dict[str, A
     else:
         scored["score"] = text_score
         scored["score_basis"] = "answer_text"
-    return scored
+    return primary_result_row(scored)
 
 
 def summarize_result_rows(rows: list[dict[str, Any]]) -> dict[str, Any]:
-    scored = [
-        row["score"]
-        for row in rows
-        if is_metric_result_row(row)
-    ]
+    scored = []
+    for row in rows:
+        normalized = primary_result_row(row) if is_error_result_row(row) else row
+        if is_metric_result_row(normalized):
+            scored.append(normalized["score"])
     if not scored:
-        return {"count": 0, "scored": 0}
+        return {"total": len(rows), "labeled": 0, "unlabeled": len(rows),
+                "count": 0, "scored": 0}
     precision = sum(float(item["precision"] or 0.0) for item in scored) / len(scored)
     recall = sum(float(item["recall"] or 0.0) for item in scored) / len(scored)
     f1 = sum(float(item["f1"] or 0.0) for item in scored) / len(scored)
@@ -289,15 +307,10 @@ def is_error_result_row(row: dict[str, Any]) -> bool:
 
 
 def is_metric_result_row(row: dict[str, Any]) -> bool:
-    """Return whether a row has a computable WebQSP-compatible score.
-
-    Pipeline failures are stored separately and are excluded from the metric
-    denominator, matching this project's error-output policy.
-    """
+    """Include every labeled item, including failures scored as zero."""
     score = row.get("score", {})
     return (
-        not is_error_result_row(row)
-        and isinstance(score, dict)
+        isinstance(score, dict)
         and score.get("labeled") is True
         and score.get("f1") is not None
     )
@@ -328,7 +341,9 @@ def evaluation_metadata(source: str) -> dict[str, Any]:
         "normalization": "strip Freebase namespace, remove WebQSP punctuation/separators, lowercase, deduplicate",
         "gold_source": "answer_entities IDs/labels from the configured Gold record",
         "protocol_change": "entity identity takes precedence over labels; this primary metric differs from the historical text-only protocol",
-        "aggregation": "macro precision/recall/F1, hits_at_1 and exact_match over successful labeled rows; failure rows are stored separately",
+        "aggregation": "macro precision/recall/F1, hits_at_1 and exact_match over all labeled rows, including pipeline failures scored as zero",
+        "failure_policy": "labeled failures receive zero precision/recall/F1/hits_at_1/exact_match and remain in the denominator; error rows are also stored separately",
+        "missing_gold_policy": "rows without evaluable Gold remain unlabeled, are reported separately, and are not silently assigned zero",
     }
 
 

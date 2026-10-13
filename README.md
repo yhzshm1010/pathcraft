@@ -115,11 +115,20 @@ substring-label scores. Artifact comparisons and optional baseline-zero
 filters also use the primary score (`--baseline-f1-zero-only` or
 `--baseline-all-f1-zero-only`).
 
-The existing aggregation policy is unchanged: metrics are macro-averaged over
-successful labeled rows; pipeline errors are written separately and excluded
-from that denominator. Always report the processed, scored and error counts;
-successful-row averages must not be presented as full-test averages when
-errors occurred.
+Metrics are macro-averaged over **all labeled items, including failures**.
+An item with a nonempty `failure` receives zero precision, recall, F1, Hit and
+exact match, even if it retains a partial prediction for diagnostics. Failed
+items stay in the metric denominator and are also saved in the separate error
+output. Only items without evaluable Gold remain unscored; always report the
+processed, scored, unlabeled and error counts. `summary.scored` must equal the
+full test size before calling the summary a full-test average.
+
+The protocol version is `answer-id-primary-v4-failures-zero`. Continuation runs
+migrate v3/v2 successful-only aggregates using the complete paired error file,
+including when perfect success rows were filtered from JSON. Missing error
+records, unknown protocol versions and mixed main/error versions are rejected
+instead of silently mixing denominators. Existing result files are not changed
+until explicitly resumed; archived experiment reports retain their old scores.
 
 The publication cleanup generalizes method-specific wording in Review and
 construction prompts, neutralizes script/configuration names, and removes

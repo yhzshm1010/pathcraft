@@ -831,6 +831,9 @@ def _question_metric_delta(
         except (OSError, json.JSONDecodeError):
             pass
 
+    baseline = primary_result_row({**baseline, "failure": baseline_failure or baseline.get("failure")})
+    current = primary_result_row(current)
+
     def block_delta(
         baseline_key: str,
         current_key: str,
@@ -856,6 +859,7 @@ def _question_metric_delta(
 
     return {
         "baseline_available": True,
+        "evaluation_version": EVALUATION_VERSION,
         "score": block_delta(
             "score",
             "score",
@@ -1130,10 +1134,18 @@ def _load_resume_state(output: Path, errors_path: Path) -> dict[str, Any]:
     state = _empty_resume_state()
     main_payload = _read_json_object(output) if output.is_file() else {}
     errors_payload = _read_json_object(errors_path) if errors_path.is_file() else {}
+    legacy_versions = {"answer-id-primary-v3", "webqsp-id-aware-v2"}
+    versions = set()
     for payload in (main_payload, errors_payload):
         version = payload.get("evaluation", {}).get("version")
-        if version and version not in {EVALUATION_VERSION, "webqsp-id-aware-v2"}:
+        if payload and not version:
+            raise ValueError("Evaluation version missing; use a new run directory")
+        if version and version not in {EVALUATION_VERSION, *legacy_versions}:
             raise ValueError("Evaluation protocol changed; use a new run directory")
+        if version:
+            versions.add(version)
+    if len(versions) > 1:
+        raise ValueError("Main/error evaluation versions differ; use a new run directory")
     main_rows = main_payload.get("rows", [])
     error_rows = errors_payload.get("rows", [])
     if not isinstance(main_rows, list) or not isinstance(error_rows, list):
@@ -1196,6 +1208,34 @@ def _load_resume_state(output: Path, errors_path: Path) -> dict[str, Any]:
         storage.get("metric_rows"),
         _stored_int(state["summary"].get("scored"), 0),
     )
+    default_errors = (
+        max(0, _stored_int(main_payload.get("count"), 0) - _stored_int(main_payload.get("success"), 0))
+        if "success" in main_payload else state["error_rows"]
+    )
+    expected_errors = _stored_int(storage.get("error_rows"), default_errors)
+    if expected_errors != len(state["error_rows_data"]) or state["error_rows"] != expected_errors:
+        raise ValueError("Error records are missing/incomplete; cannot safely resume scoring")
+    if any(not is_error_result_row(row) for row in state["error_rows_data"]):
+        raise ValueError("Error output contains a non-error row; cannot safely resume scoring")
+    if versions & legacy_versions:
+        # Even when perfect success rows were not persisted, their metric sums
+        # remain in the old aggregate. Adding labeled zero-score errors changes
+        # only the denominator; do not count their observed rows twice.
+        previous = state["summary"]
+        if not previous:
+            if state["success_rows"] != len(state["successful_rows"]):
+                raise ValueError("Legacy scoring aggregate is missing; use a new run directory")
+            previous = summarize_result_rows(state["successful_rows"])
+            previous["total"] = state["processed_count"]
+        errors_summary = summarize_result_rows(state["error_rows_data"])
+        migrated = _merge_summaries(previous, errors_summary)
+        observed = _stored_int(previous.get("total"), state["processed_count"])
+        new_count = _stored_int(migrated.get("scored"), 0)
+        if observed < new_count:
+            raise ValueError("Legacy scoring counters are inconsistent; use a new run directory")
+        migrated.update(total=observed, labeled=new_count, unlabeled=observed - new_count)
+        state["summary"] = migrated
+        state["metric_rows"] = new_count
     state["persisted_count"] = len(state["successful_rows"])
     state["resume_incomplete"] = bool(storage.get("resume_incomplete", False))
     state["resume_start"] = _stored_int(storage.get("resume_start"), 0)
@@ -1341,8 +1381,6 @@ def _merge_summaries(previous: dict[str, Any], current: dict[str, Any]) -> dict[
     previous_count = _stored_int(previous.get("scored"), _stored_int(previous.get("count"), 0))
     current_count = _stored_int(current.get("scored"), _stored_int(current.get("count"), 0))
     total = previous_count + current_count
-    if total == 0:
-        return {}
     previous_total = _stored_int(previous.get("total"), previous_count)
     current_total = _stored_int(current.get("total"), current_count)
     merged: dict[str, Any] = {
@@ -1371,7 +1409,7 @@ def _merge_summaries(previous: dict[str, Any], current: dict[str, Any]) -> dict[
         current_value = float(current.get(key, 0.0) or 0.0)
         merged[key] = (
             previous_count * previous_value + current_count * current_value
-        ) / total
+        ) / total if total else None
     return merged
 
 
@@ -1391,10 +1429,8 @@ def _subtract_summaries(total_summary: dict[str, Any], removed: dict[str, Any]) 
         _stored_int(removed.get("count"), 0),
     )
     remaining_count = total_count - removed_count
-    if removed_count == 0:
-        return _primary_summary(total_summary)
-    if remaining_count <= 0:
-        return {}
+    if remaining_count < 0:
+        raise ValueError("Cannot subtract more scored rows than the aggregate contains")
 
     result: dict[str, Any] = {
         "total": max(
@@ -1426,7 +1462,7 @@ def _subtract_summaries(total_summary: dict[str, Any], removed: dict[str, Any]) 
         removed_value = float(removed.get(metric, 0.0) or 0.0)
         result[metric] = (
             total_count * total_value - removed_count * removed_value
-        ) / remaining_count
+        ) / remaining_count if remaining_count else None
     return result
 
 

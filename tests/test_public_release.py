@@ -17,12 +17,12 @@ sys.path[:0] = [str(ROOT / "src"), str(ROOT / "dataset_construction/src"),
                str(ROOT / "dataset_construction/scripts")]
 
 from semantic_guided_kbqa.evaluation import (
-    canonicalize_answer_id, evaluation_metadata, primary_result_row,
+    EVALUATION_VERSION, canonicalize_answer_id, evaluation_metadata, is_metric_result_row, primary_result_row,
     score_result_row, summarize_result_rows,
 )
 from semantic_guided_kbqa.cli import (
     _baseline_f1_is_zero, _load_resume_state, _merge_summaries,
-    _subtract_summaries, _write_question_artifacts, build_parser,
+    _subtract_summaries, _write_question_artifacts, _write_output, _rewind_resume_state, _question_metric_delta, build_parser,
 )
 from source_annotations import load_source_annotations
 
@@ -70,19 +70,160 @@ class PrimaryScoringTests(unittest.TestCase):
         self.assertEqual(set(row["delta"]), {"score"})
         self.assertNotIn("additional_metrics", evaluation_metadata("synthetic"))
 
-    def test_aggregation_policy_is_preserved(self):
+    def test_failures_are_included_in_aggregation(self):
         record = {"answer_entities": {"m.correct": "Correct"}}
         good = score_result_row(record, {"prediction": ["m.correct"]})
         wrong = score_result_row(record, {"prediction": ["m.wrong"]})
         error = score_result_row(record, {"prediction": [], "failure": "synthetic error"})
         summary = summarize_result_rows([good, wrong, error])
         self.assertEqual(summary["total"], 3)
-        self.assertEqual(summary["scored"], 2)
-        self.assertEqual(summary["macro_f1"], 0.5)
+        self.assertEqual(summary["scored"], 3)
+        self.assertAlmostEqual(summary["macro_f1"], 1 / 3)
+        self.assertTrue(is_metric_result_row(error))
         self.assertFalse(any(key.endswith("_label") for key in summary))
         combined = _merge_summaries(summarize_result_rows([good]), summarize_result_rows([wrong]))
         self.assertEqual(combined["macro_f1"], 0.5)
         self.assertEqual(_subtract_summaries(combined, summarize_result_rows([wrong]))["macro_f1"], 1.0)
+
+    def test_failure_partial_prediction_is_zero_without_mutating_evidence(self):
+        record = {"answer_entities": {"m.correct": "Correct"}}
+        original = {"prediction": ["m.correct"], "failure": "timeout"}
+        row = score_result_row(record, original)
+        for metric in ("precision", "recall", "f1", "hits_at_1", "exact_match"):
+            self.assertEqual(row["score"][metric], 0.0)
+        self.assertFalse(row["score"]["exact"])
+        self.assertEqual(row["prediction"], ["m.correct"])
+        self.assertNotIn("score", original)
+
+    def test_failed_literal_answer_is_zero(self):
+        row = score_result_row({"answer_entities": {"Value": "2001"}},
+                               {"prediction": ["2001"], "failure": "timeout"})
+        self.assertEqual(row["score"]["f1"], 0.0)
+        self.assertTrue(row["score"]["labeled"])
+
+    def test_legacy_failure_score_is_zeroed_during_summary(self):
+        good = score_result_row({"answer_entities": {"m.correct": "Correct"}},
+                                {"prediction": ["m.correct"]})
+        legacy = {**good, "failure": "timeout"}
+        self.assertEqual(summarize_result_rows([legacy])["f1"], 0.0)
+        self.assertEqual(legacy["score"]["f1"], 1.0)
+
+    def test_missing_gold_is_reported_not_fabricated(self):
+        unknown = score_result_row({}, {"prediction": [], "failure": "timeout"})
+        self.assertFalse(is_metric_result_row(unknown))
+        self.assertIsNone(unknown["score"]["f1"])
+        summary = _merge_summaries({}, summarize_result_rows([unknown]))
+        self.assertEqual(summary["total"], 1)
+        self.assertEqual(summary["unlabeled"], 1)
+        self.assertEqual(summary["scored"], 0)
+        self.assertIsNone(summary["f1"])
+
+    def test_failure_gold_without_old_score_is_included(self):
+        row = primary_result_row({"failure": "timeout", "gold_answers": ["m.correct"]})
+        self.assertTrue(is_metric_result_row(row))
+        self.assertEqual(summarize_result_rows([row])["scored"], 1)
+
+    def test_blank_gold_is_not_labeled(self):
+        row = primary_result_row({"failure": "timeout", "gold_answers": ["  "]})
+        self.assertFalse(is_metric_result_row(row))
+
+    def test_failed_baseline_delta_uses_same_zero_policy(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            item = root / "000000"
+            item.mkdir()
+            good = score_result_row({"answer_entities": {"m.correct": "Correct"}},
+                {"prediction": ["m.correct"], "index": 0, "question": "synthetic"})
+            (item / "evaluation.json").write_text(json.dumps(good))
+            (item / "result.json").write_text(json.dumps({"failure": "timeout"}))
+            result = _question_metric_delta(root, current=good, index=0, question="synthetic")
+            self.assertEqual(result["score"]["f1"], 1.0)
+            self.assertEqual(result["evaluation_version"], EVALUATION_VERSION)
+
+    def test_legacy_filtered_resume_migrates_denominator(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output, errors = Path(directory) / "results.json", Path(directory) / "errors.json"
+            good = score_result_row({"answer_entities": {"m.correct": "Correct"}},
+                                    {"prediction": ["m.correct"], "index": 0})
+            failed = {**good, "index": 1, "failure": "timeout"}
+            # A filtered old checkpoint omitted the perfect row but kept its
+            # successful-only aggregate; the partial failed answer scored 1.
+            old_summary = summarize_result_rows([good])
+            old_summary.update(total=2, unlabeled=1)
+            metadata = {"version": "answer-id-primary-v3"}
+            output.write_text(json.dumps({"evaluation": metadata, "rows": [],
+                "count": 2, "success": 1, "summary": old_summary,
+                "storage": {"error_rows": 1, "metric_rows": 1}}))
+            errors.write_text(json.dumps({"evaluation": metadata, "rows": [failed],
+                                          "count": 1, "processed_count": 2}))
+            state = _load_resume_state(output, errors)
+            self.assertEqual(state["summary"]["total"], 2)
+            self.assertEqual(state["summary"]["scored"], 2)
+            self.assertEqual(state["summary"]["unlabeled"], 0)
+            self.assertEqual(state["summary"]["f1"], 0.5)
+            self.assertEqual(state["metric_rows"], 2)
+            self.assertEqual(state["error_rows_data"][0]["score"]["f1"], 0.0)
+            _write_output(output, [], config_path="synthetic", evaluation_source="synthetic",
+                          write_only_nonperfect=True, errors_path=errors, resume_state=state)
+            again = _load_resume_state(output, errors)
+            self.assertEqual(again["summary"], state["summary"])
+            self.assertEqual(again["metric_rows"], 2)
+            self.assertEqual(json.loads(output.read_text())["evaluation"]["version"], EVALUATION_VERSION)
+
+    def test_resume_rejects_missing_error_records(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output, errors = Path(directory) / "results.json", Path(directory) / "errors.json"
+            output.write_text(json.dumps({"evaluation": {"version": "answer-id-primary-v3"},
+                "rows": [], "count": 2, "success": 1, "storage": {"error_rows": 1}}))
+            with self.assertRaisesRegex(ValueError, "missing/incomplete"):
+                _load_resume_state(output, errors)
+
+    def test_resume_rejects_mixed_or_unknown_versions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output, errors = Path(directory) / "results.json", Path(directory) / "errors.json"
+            output.write_text(json.dumps({"evaluation": {"version": EVALUATION_VERSION}, "rows": []}))
+            errors.write_text(json.dumps({"evaluation": {"version": "answer-id-primary-v3"}, "rows": []}))
+            with self.assertRaisesRegex(ValueError, "versions differ"):
+                _load_resume_state(output, errors)
+            output.write_text(json.dumps({"evaluation": {"version": "unknown"}, "rows": []}))
+            with self.assertRaisesRegex(ValueError, "protocol changed"):
+                _load_resume_state(output, errors)
+
+    def test_error_output_is_separate_but_in_summary_and_rewind(self):
+        record = {"answer_entities": {"m.correct": "Correct"}}
+        good = score_result_row(record, {"prediction": ["m.correct"], "index": 0})
+        failed = score_result_row(record, {"prediction": [], "index": 1, "failure": "timeout"})
+        with tempfile.TemporaryDirectory() as directory:
+            output, errors = Path(directory) / "results.json", Path(directory) / "errors.json"
+            _write_output(output, [good, failed], config_path="synthetic", evaluation_source="synthetic",
+                          write_only_nonperfect=False, errors_path=errors)
+            result = json.loads(output.read_text())
+            self.assertEqual(len(result["rows"]), 1)
+            self.assertEqual(len(json.loads(errors.read_text())["rows"]), 1)
+            self.assertEqual(result["summary"]["scored"], 2)
+            self.assertEqual(result["summary"]["f1"], 0.5)
+            self.assertEqual(result["storage"]["metric_rows"], 2)
+            state = _load_resume_state(output, errors)
+            rewound = _rewind_resume_state(state, start=1)
+            self.assertEqual(rewound["summary"]["f1"], 1.0)
+            self.assertEqual(rewound["metric_rows"], 1)
+
+    def test_all_failures_are_scored(self):
+        row = score_result_row({"answer_entities": {"m.correct": "Correct"}},
+                               {"prediction": [], "failure": "timeout"})
+        summary = summarize_result_rows([row, row])
+        self.assertEqual(summary["scored"], 2)
+        self.assertEqual(summary["f1"], 0.0)
+
+    def test_rewind_unlabeled_rows_keeps_correct_observed_count(self):
+        good = score_result_row({"answer_entities": {"m.correct": "Correct"}},
+                                {"prediction": ["m.correct"]})
+        unknown = score_result_row({}, {"prediction": [], "failure": "timeout"})
+        combined = summarize_result_rows([good, unknown])
+        result = _subtract_summaries(combined, summarize_result_rows([unknown]))
+        self.assertEqual(result["total"], 1)
+        self.assertEqual(result["unlabeled"], 0)
+        self.assertEqual(result["f1"], 1.0)
 
     def test_baseline_filter_uses_primary_score(self):
         with tempfile.TemporaryDirectory() as directory:
