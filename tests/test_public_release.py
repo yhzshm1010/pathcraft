@@ -25,6 +25,8 @@ from semantic_guided_kbqa.cli import (
     _subtract_summaries, _write_question_artifacts, _write_output, _rewind_resume_state, _question_metric_delta, build_parser,
 )
 from source_annotations import load_source_annotations
+from semantic_guided_kbqa import prompts as review_prompts
+from semantic_guided_kbqa.decomposition_review import DecompositionReviewer
 
 
 class PrimaryScoringTests(unittest.TestCase):
@@ -264,6 +266,100 @@ class PrimaryScoringTests(unittest.TestCase):
             result = json.loads((root / "000000/evaluation.json").read_text())
             self.assertIn("score", result)
             self.assertFalse(any(key.endswith("_label_score") for key in result))
+
+
+class TrainReviewExampleTests(unittest.TestCase):
+    def test_only_source_verified_cwq_train_examples_are_loaded(self):
+        examples = review_prompts._load_examples() + review_prompts._load_preserve_examples()
+        self.assertEqual(len(examples), 17)
+        self.assertEqual(len({x['question'] for x in examples}), 17)
+        for item in examples:
+            self.assertEqual(item['source']['dataset'], 'CWQ')
+            self.assertEqual(item['source']['split'], 'train')
+            self.assertTrue(item['verification']['source_graph_verified'])
+            self.assertTrue(item['verification']['entity_bindings_verified'])
+            self.assertNotIn('candidate_f1', item['verification'])
+            self.assertFalse(item['verification']['full_pipeline_verified'])
+
+    def test_train_targets_match_the_released_training_rows(self):
+        path = ROOT / 'data/train/cwq/decompose_train.json'
+        if not path.is_file():
+            self.skipTest('TRAIN exports are not installed')
+        train = json.loads(path.read_text())
+        for item in review_prompts._load_examples() + review_prompts._load_preserve_examples():
+            row = train[item['source']['row_index']]
+            self.assertEqual(json.loads(row['input'])['question'], item['question'])
+            good = item.get('corrected_decomposition', item.get('decomposition'))
+            self.assertEqual(json.loads(row['output'])['decomposition'], good)
+
+    def test_original_example_counts_and_context_schema_are_kept(self):
+        for include_context, review_count, rewrite_count in ((False,14,9),(True,17,11)):
+            for action, count in (('review', review_count), ('rewrite', rewrite_count)):
+                text = review_prompts.cwq_examples(action, include_entity_context=include_context)
+                requests = [json.loads(line.split(': ',1)[1]) for line in text.splitlines()
+                    if line.startswith(('CWQ preserve request: ', 'CWQ example request: '))]
+                self.assertEqual(len(requests), count)
+                for request in requests:
+                    self.assertNotIn('gold_answers', request)
+                    self.assertNotIn('sparql', request)
+                    self.assertEqual('entity_context' in request, include_context)
+                    if include_context:
+                        self.assertTrue(request['entity_context'])
+                        self.assertTrue(all(set(x) == {'id','name','types'} for x in request['entity_context']))
+
+    def test_nontrain_resource_metadata_is_rejected(self):
+        payload = json.loads(review_prompts.EXAMPLE_PATH.read_text())
+        payload['examples'][0]['source']['split'] = 'test'
+        with patch.object(review_prompts.json, 'loads', return_value=payload):
+            with self.assertRaisesRegex(ValueError, 'TRAIN'):
+                review_prompts._load_examples()
+
+    def test_two_call_budget_and_schemas_are_unchanged(self):
+        for reasonable, expected_calls in ((True,1),(False,2)):
+            class FakeModel:
+                config = types.SimpleNamespace(retries=0, model='offline-stub')
+                def __init__(self): self.calls = []
+                def generate_json(self, **kwargs):
+                    self.calls.append(kwargs)
+                    if len(self.calls) == 1:
+                        return [{'is_reasonable':reasonable, 'issues':[] if reasonable else ['missing terminal'], 'reason':'offline stub'}]
+                    return [{'decomposition':['What is the state of Example University?']}]
+            model = FakeModel()
+            reviewer = DecompositionReviewer(model, workflow='two_call', prompt_family='cwq')
+            result, trace = reviewer.run('What state contains Example University?', ['Where is Example University?'])
+            self.assertIsNotNone(result)
+            self.assertEqual(len(model.calls), expected_calls)
+            self.assertEqual(trace['model_call_count'], expected_calls)
+            self.assertTrue(all(call['count'] == 1 for call in model.calls))
+            self.assertIn('CWQ TRAIN questions', model.calls[0]['instruction'])
+
+    def test_builder_relation_normalization_matches_runtime(self):
+        spec = importlib.util.spec_from_file_location('train_review_builder', ROOT / 'scripts/build_cwq_review_train_examples.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        from semantic_guided_kbqa.ontology import relation_id_from_label
+        for label in (['sports','sports team','owner s'], ['people','person','place of birth'], [], 'invalid'):
+            self.assertEqual(module.relation_id_from_label(label), relation_id_from_label(label))
+
+    def test_builder_checks_graph_direction_and_answer_identity(self):
+        spec = importlib.util.spec_from_file_location('train_graph_builder', ROOT / 'scripts/build_cwq_review_train_examples.py')
+        module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+        source = {'sparql': 'SELECT DISTINCT ?x WHERE { ns:m.anchor ns:example.person.field ?x . }'}
+        compose = {'entities':[{'id':'E0','surface':'Anchor'}], 'answer_var':'V0',
+                   'triples':[{'subject':'E0','relation_label':['example','person','field'],'object':'V0'}]}
+        self.assertTrue(module.source_graph_matches(compose, source, {'Anchor':'m.anchor'}))
+        wrong_answer = {**compose, 'answer_var':'E0'}
+        self.assertFalse(module.source_graph_matches(wrong_answer, source, {'Anchor':'m.anchor'}))
+        wrong_direction = {**compose, 'triples':[{'subject':'V0','relation_label':['example','person','field'],'object':'E0'}]}
+        self.assertFalse(module.source_graph_matches(wrong_direction, source, {'Anchor':'m.anchor'}))
+
+    def test_builder_rejects_wrong_entity_name_binding(self):
+        spec = importlib.util.spec_from_file_location('train_entity_builder', ROOT / 'scripts/build_cwq_review_train_examples.py')
+        module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+        source = {'sparql': 'SELECT ?x WHERE { ns:m.anchor ns:example.person.field ?x . }'}
+        semantic = {'anchors':[{'id':'A0','surface':'Wrong Name'}], 'semantic_paths':[
+            {'anchor_ref':'A0','steps':[{'relation_label':['example','person','field'],'direction':'forward'}]}]}
+        self.assertEqual(module.entity_context(semantic, source, {'m.anchor':'Canonical Name'}), ([],{}))
 
 
 class SourceInterfaceTests(unittest.TestCase):

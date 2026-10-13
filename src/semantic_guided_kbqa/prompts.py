@@ -403,7 +403,7 @@ def _prompt_principles_question_requirements(question):
 
 
 # ---- cwq_fewshots ----
-"""Full-pipeline-verified CWQ decomposition review demonstrations."""
+"""CWQ TRAIN demonstrations with source-verified stage annotations."""
 
 
 import json
@@ -413,11 +413,10 @@ from pathlib import Path
 EXAMPLE_PATH = Path(__file__).with_name("resources") / "glm_cwq_full_pipeline_examples.json"
 PRESERVE_PATH = Path(__file__).with_name("resources") / "glm_cwq_global_preserve_examples.json"
 ENTITY_CONTEXT_PATH = Path(__file__).with_name("resources") / "glm_cwq_example_entity_context.json"
-_BASE_REPAIR_SOURCE_INDEXES = {18, 67, 120, 201, 769, 1000, 1277, 1367, 9590}
-_ENTITY_CONTEXT_REPAIR_SOURCE_INDEXES = (
-    _BASE_REPAIR_SOURCE_INDEXES | {1007, 1105}
-)
-_ENTITY_CONTEXT_PRESERVE_SOURCE_INDEXES = {10}
+_BASE_REPAIR_EXAMPLE_COUNT = 9
+_ENTITY_CONTEXT_REPAIR_EXAMPLE_COUNT = 11
+_BASE_PRESERVE_EXAMPLE_COUNT = 5
+_ENTITY_CONTEXT_PRESERVE_EXAMPLE_COUNT = 6
 
 
 def _load_entity_contexts() -> dict[str, list[dict]]:
@@ -438,15 +437,18 @@ def _load_examples() -> list[dict]:
     data = json.loads(EXAMPLE_PATH.read_text(encoding="utf-8"))
     examples = data.get("examples")
     if not isinstance(examples, list) or not examples:
-        raise ValueError("CWQ full-pipeline example resource is empty")
+        raise ValueError("CWQ TRAIN repair example resource is empty")
     for item in examples:
         verification = item.get("verification", {})
-        if (verification.get("full_pipeline_verified") is not True
-                or verification.get("candidate_f1") != 1.0
-                or verification.get("candidate_exact") is not True):
-            raise ValueError(f"Unverified CWQ example: {item.get('source_index')}")
+        source = item.get("source", {})
+        if (source.get("dataset") != "CWQ" or source.get("split") != "train"
+                or verification.get("split") != "train"
+                or verification.get("stage_alignment_verified") is not True
+                or verification.get("source_graph_verified") is not True
+                or verification.get("entity_bindings_verified") is not True):
+            raise ValueError(f"Unverified CWQ TRAIN example: {item.get('source_index')}")
         if not item.get("original_decomposition") or not item.get("corrected_decomposition"):
-            raise ValueError(f"CWQ example lacks before/after decomposition: {item.get('source_index')}")
+            raise ValueError(f"CWQ TRAIN example lacks before/after decomposition: {item.get('source_index')}")
     return examples
 
 
@@ -454,45 +456,41 @@ def _load_preserve_examples() -> list[dict]:
     data = json.loads(PRESERVE_PATH.read_text(encoding="utf-8"))
     examples = data.get("examples")
     if not isinstance(examples, list) or not examples:
-        raise ValueError("CWQ global preserve examples are empty")
+        raise ValueError("CWQ TRAIN preserve examples are empty")
     for item in examples:
         verification = item.get("verification", {})
-        if (verification.get("full_pipeline_verified") is not True
-                or verification.get("candidate_f1") != 1.0
-                or verification.get("candidate_exact") is not True):
-            raise ValueError(f"Unverified CWQ preserve example: {item.get('source_index')}")
+        source = item.get("source", {})
+        if (source.get("dataset") != "CWQ" or source.get("split") != "train"
+                or verification.get("split") != "train"
+                or verification.get("stage_alignment_verified") is not True
+                or verification.get("source_graph_verified") is not True
+                or verification.get("entity_bindings_verified") is not True):
+            raise ValueError(f"Unverified CWQ TRAIN preserve example: {item.get('source_index')}")
         if not item.get("question") or not item.get("decomposition"):
             raise ValueError(f"Incomplete CWQ preserve example: {item.get('source_index')}")
     return examples
 
 
 def _selected_repair_examples(*, include_entity_context: bool = False) -> list[dict]:
-    source_indexes = (
-        _ENTITY_CONTEXT_REPAIR_SOURCE_INDEXES
+    count = (
+        _ENTITY_CONTEXT_REPAIR_EXAMPLE_COUNT
         if include_entity_context
-        else _BASE_REPAIR_SOURCE_INDEXES
+        else _BASE_REPAIR_EXAMPLE_COUNT
     )
-    return [
-        item for item in _load_examples()
-        if int(item.get("source_index", -1)) in source_indexes
-    ]
+    return _load_examples()[:count]
 
 
 def cwq_examples(action: str, *, include_entity_context: bool = False) -> str:
     if action not in {"review", "rewrite"}:
         raise ValueError("CWQ examples support review and rewrite only")
     blocks = [
-        "CWQ examples below are sampled across the full dataset, not from the first-20 regression slice. Preserve examples are complete and must not be rewritten. Repair examples are verified before/after cases whose corrected plans achieved full-pipeline F1=1. Use them for executable path structure and constraint ownership, never for facts or answer memorization.",
+        "These examples use only CWQ TRAIN questions and aligned stage annotations verified against their TRAIN query graphs. Preserve examples show complete training plans. Repair inputs are controlled corruptions of those same training plans, not benchmark repairs. Use the examples for path structure and constraint ownership, never to copy entity names or answer facts into the current request.",
     ]
     if action == "review":
         preserve_examples = _load_preserve_examples()
-        selected_preserve_examples = preserve_examples[:5]
-        if include_entity_context:
-            selected_preserve_examples += [
-                item for item in preserve_examples[5:]
-                if int(item.get("source_index", -1))
-                in _ENTITY_CONTEXT_PRESERVE_SOURCE_INDEXES
-            ]
+        count = (_ENTITY_CONTEXT_PRESERVE_EXAMPLE_COUNT if include_entity_context
+                 else _BASE_PRESERVE_EXAMPLE_COUNT)
+        selected_preserve_examples = preserve_examples[:count]
         for item in selected_preserve_examples:
             request = {
                 "question": item["question"],

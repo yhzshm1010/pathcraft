@@ -1,304 +1,319 @@
 {
-  "policy": "Actual verified train questions/decompositions; controlled corruptions only of these train paths. No test-derived anonymous examples.",
+  "policy": "CWQ TRAIN stage annotations verified against official TRAIN query graphs; controlled corruptions only; no test-derived repairs or answer facts.",
   "examples": [
     {
-      "question": "what is the name of justin bieber brother",
+      "question": "What state is home to the university that is represented in sports by George Washington Colonials men's basketball?",
       "decomposition": [
-        "Who is the sibling s of person Justin Bieber? Who is the sibling of the sibling relationship?",
+        "George Washington Colonials men's basketball is the sports teams of the educational institution. What is the headquarters of the organization? What is the state province region of the mailing address?"
+      ],
+      "source": {
+        "dataset": "CWQ",
+        "split": "train",
+        "row_index": 0,
+        "source_id": "WebQTrn-3513_7c4117891abf63781b892537979054c6",
+        "source_query_sha256": "30d1725ad18dfb357e3802d036ef32cc02a5f9738007d01f041d16bb0bb74991",
+        "target_sha256": "eac09db1dcd622a46e9f6fffa952e9ab64c3c82f8c56d5565c237ccfdf0c4f57",
+        "stage_alignment_verified": true,
+        "source_graph_verified": true,
+        "entity_bindings_verified": true
+      },
+      "corruptions": [
+        {
+          "decomposition": [
+            "George Washington Colonials men's basketball is the sports teams of the educational institution. What is the headquarters of the organization?"
+          ],
+          "mutation": "drop_terminal_hop",
+          "issues": [
+            "The path omits its final hop and stops before the requested terminal."
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Which school with the fight song \"The Orange and Blue\" did Emmitt Smith play for?",
+      "decomposition": [
+        "What is the teams of pro athlete Emmitt Smith? What is the team of the sports team roster?",
+        "The Orange and Blue is the fight song of the sports team."
+      ],
+      "source": {
+        "dataset": "CWQ",
+        "split": "train",
+        "row_index": 1,
+        "source_id": "WebQTrn-2360_a40a0d50b9a1006e2d254705d46345ea",
+        "source_query_sha256": "a9efad1b27d9fd9539b1e8ece5a5b8aad4805e33284040560d745f7da476d946",
+        "target_sha256": "cf851f55956ffac6255f9a3a289716763b200aa8eab00c9e154910b72ee4d366",
+        "stage_alignment_verified": true,
+        "source_graph_verified": true,
+        "entity_bindings_verified": true
+      },
+      "corruptions": [
+        {
+          "decomposition": [
+            "What is the teams of pro athlete Emmitt Smith?",
+            "The Orange and Blue is the fight song of the sports team."
+          ],
+          "mutation": "drop_terminal_hop",
+          "issues": [
+            "The path omits its final hop and stops before the requested terminal."
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Who dated the performer who headlined the concert tour called Demi World Tour?",
+      "decomposition": [
+        "Demi World Tour is the concert tours of the artist. What is the dated of the celebrity? Who is the participant of the dated?"
+      ],
+      "source": {
+        "dataset": "CWQ",
+        "split": "train",
+        "row_index": 5,
+        "source_id": "WebQTest-1085_1cffc5c553afc1802970e8a6064cac32",
+        "source_query_sha256": "dc82e81f705b11462f1eb84676654369bb92e1b3ddbf868187b3d727e5326f1f",
+        "target_sha256": "306c80c66ef52285374743297a91c129e4431b6a56d754fbb644b66a5564a390",
+        "stage_alignment_verified": true,
+        "source_graph_verified": true,
+        "entity_bindings_verified": true
+      },
+      "corruptions": [
+        {
+          "decomposition": [
+            "Demi World Tour is the concert tours of the artist. What is the dated of the celebrity?"
+          ],
+          "mutation": "drop_terminal_hop",
+          "issues": [
+            "The path omits its final hop and stops before the requested terminal."
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Which team owned by Malcolm Glazer has Tim Howard playing for it?",
+      "decomposition": [
+        "What is the teams of pro athlete Tim Howard? What is the team of the sports team roster?",
+        "Malcolm Glazer is the owner s of the professional sports team."
+      ],
+      "source": {
+        "dataset": "CWQ",
+        "split": "train",
+        "row_index": 6,
+        "source_id": "WebQTrn-2581_321be15dae483ed949b74cf01e259708",
+        "source_query_sha256": "3742d65e6085fc6b356da80c8bb3d371e4e1a67213eea9b0e94f861b941e2400",
+        "target_sha256": "fdc22facb4a7e812ae8a9598309267cd22c580a6a37bb00b280ece77a52af8e2",
+        "stage_alignment_verified": true,
+        "source_graph_verified": true,
+        "entity_bindings_verified": true
+      },
+      "corruptions": [
+        {
+          "decomposition": [
+            "What is the teams of pro athlete Tim Howard?",
+            "Malcolm Glazer is the owner s of the professional sports team."
+          ],
+          "mutation": "drop_terminal_hop",
+          "issues": [
+            "The path omits its final hop and stops before the requested terminal."
+          ]
+        }
+      ]
+    },
+    {
+      "question": "What business titles was the most famous alumni of Detroit Business Institute best known for?",
+      "decomposition": [
+        "Detroit Business Institute is the institution of the education. It is the education of the person. What is the profession of the person?"
+      ],
+      "source": {
+        "dataset": "CWQ",
+        "split": "train",
+        "row_index": 8,
+        "source_id": "WebQTrn-2773_7f835727d3cecbcb6c6b48db1fe147b9",
+        "source_query_sha256": "11104a9829b25d2cb85358dc0e3f791d78f3c82fd93f7965df6286fd9139e038",
+        "target_sha256": "edebdc288869ddfa9d30426afa4f99acf5896bb4f45e446d0e66833603dc5b8a",
+        "stage_alignment_verified": true,
+        "source_graph_verified": true,
+        "entity_bindings_verified": true
+      },
+      "corruptions": [
+        {
+          "decomposition": [
+            "What is the name of Detroit Business Institute?"
+          ],
+          "mutation": "replace_requested_attribute",
+          "issues": [
+            "The plan returns the anchor's name instead of following the required bridge to the requested answer."
+          ]
+        }
+      ]
+    },
+    {
+      "question": "What team with mascot named Champ did Tyson Chandler play for?",
+      "decomposition": [
+        "What is the teams of pro athlete Tyson Chandler? What is the team of the sports team roster?",
+        "Champ is the team mascot of the sports team."
+      ],
+      "source": {
+        "dataset": "CWQ",
+        "split": "train",
+        "row_index": 9,
+        "source_id": "WebQTrn-2946_93c6dae3d218dbe112d4120f45c93298",
+        "source_query_sha256": "c3545b3474a71960196338c62b97b7677bc32b142523bb1cbc87b17dfdb66f56",
+        "target_sha256": "1e61a6db001d68149b4fb2287f02e9b9c22a3d2258ab4910d5eeee37f7eed51b",
+        "stage_alignment_verified": true,
+        "source_graph_verified": true,
+        "entity_bindings_verified": true
+      },
+      "corruptions": [
+        {
+          "decomposition": [
+            "What is the teams of pro athlete Tyson Chandler?",
+            "Champ is the team mascot of the sports team."
+          ],
+          "mutation": "drop_terminal_hop",
+          "issues": [
+            "The path omits its final hop and stops before the requested terminal."
+          ]
+        }
+      ]
+    },
+    {
+      "question": "What language is spoken in the country that has Southern Peninsular?",
+      "decomposition": [
+        "Southern Peninsula is the administrative divisions of the country. What is the languages spoken of the country?"
+      ],
+      "source": {
+        "dataset": "CWQ",
+        "split": "train",
+        "row_index": 13,
+        "source_id": "WebQTrn-388_72afc30add424e52cbe00b736509ec22",
+        "source_query_sha256": "9ddabb36088902be19e7dd22ddabcf5a278e9cda0d62d581a9b0adb30f6127f9",
+        "target_sha256": "252f4e98eaa49c5e5758a00cef7c404863ee4c267c0422b9ba7920e84e5f5842",
+        "stage_alignment_verified": true,
+        "source_graph_verified": true,
+        "entity_bindings_verified": true
+      },
+      "corruptions": [
+        {
+          "decomposition": [
+            "What is the name of Southern Peninsula?"
+          ],
+          "mutation": "replace_requested_attribute",
+          "issues": [
+            "The plan returns the anchor's name instead of following the required bridge to the requested answer."
+          ]
+        }
+      ]
+    },
+    {
+      "question": "What sport was played by the winners of the 1948 Stanley Cup?",
+      "decomposition": [
+        "1948 Stanley Cup Finals is the championships of the sports team. What is the event feed of the event presenting organisation? What is the type of event of the event feed?"
+      ],
+      "source": {
+        "dataset": "CWQ",
+        "split": "train",
+        "row_index": 15,
+        "source_id": "WebQTrn-37_51530e5585466e3d69fbf894a0125e3b",
+        "source_query_sha256": "0af35ee79304ea6de6281df444122442daf083a408971c4d6529b9655e733a7a",
+        "target_sha256": "1973dc194f240b4043299325e7ebf5178416a8b9ba868063706fb49decb769c0",
+        "stage_alignment_verified": true,
+        "source_graph_verified": true,
+        "entity_bindings_verified": true
+      },
+      "corruptions": [
+        {
+          "decomposition": [
+            "1948 Stanley Cup Finals is the championships of the sports team. What is the event feed of the event presenting organisation?"
+          ],
+          "mutation": "drop_terminal_hop",
+          "issues": [
+            "The path omits its final hop and stops before the requested terminal."
+          ]
+        }
+      ]
+    },
+    {
+      "question": "A person attending education institution Assuptuion Saint Bridget is from where?",
+      "decomposition": [
+        "Assuptuion Saint Bridget is the institution of the education. It is the education of the person. What is the place of birth of the person?"
+      ],
+      "source": {
+        "dataset": "CWQ",
+        "split": "train",
+        "row_index": 17,
+        "source_id": "WebQTrn-2649_49cff836e2d4d893a9e364573ab1e3c2",
+        "source_query_sha256": "2028594c6ac392e015aafa278e11bfaae618c27170be2dd069ac796e6de60b02",
+        "target_sha256": "de57fe21a7828f316ecd8744e601c7984fd1fe36d839d3ee7fcb904e1c8c3254",
+        "stage_alignment_verified": true,
+        "source_graph_verified": true,
+        "entity_bindings_verified": true
+      },
+      "corruptions": [
+        {
+          "decomposition": [
+            "What is the name of Assuptuion Saint Bridget?"
+          ],
+          "mutation": "replace_requested_attribute",
+          "issues": [
+            "The plan returns the anchor's name instead of following the required bridge to the requested answer."
+          ]
+        }
+      ]
+    },
+    {
+      "question": "Who is the brother of the actor who played the character Alien on TV Monitors #2?",
+      "decomposition": [
+        "Alien on TV Monitors #2 is the character of the performance. It is the film of the actor. Who is the sibling s of the person? Who is the sibling of the sibling relationship?",
         "Male is the gender of the person."
       ],
       "source": {
+        "dataset": "CWQ",
         "split": "train",
-        "file": "data/webqsp/finetune/decompose_train.json",
-        "row_index": 0,
-        "verified_official_train": true,
-        "max_test_text_similarity": 0.7532467532467533
+        "row_index": 22,
+        "source_id": "WebQTrn-0_4",
+        "source_query_sha256": "3bf655aa4dede7a1824f25f3acc3b1f671dfdd4b07586083aad648c5f7ce1694",
+        "target_sha256": "a47f2796ae3186c1f78d761ec190f24baf9461f7569ccb3e8091a5020aef91eb",
+        "stage_alignment_verified": true,
+        "source_graph_verified": true,
+        "entity_bindings_verified": true
       },
       "corruptions": [
         {
           "decomposition": [
-            "Who is the sibling s of person Justin Bieber? Who is the sibling of the sibling relationship?"
-          ],
-          "issues": [
-            "LOST_CONSTRAINT: question requires Male is the gender of the person. but this condition is absent from the current path."
-          ],
-          "mutation": "drop_constraint_item"
-        },
-        {
-          "decomposition": [
-            "Who is the sibling s of person Justin Bieber?",
+            "Alien on TV Monitors #2 is the character of the performance. It is the film of the actor. Who is the sibling s of the person?",
             "Male is the gender of the person."
           ],
+          "mutation": "drop_terminal_hop",
           "issues": [
-            "BROKEN_PATH: question what is the name of justin bieber brother requires the terminal question Who is the sibling of the sibling relationship? but the current path only asks Who is the sibling s of person Justin Bieber?"
-          ],
-          "mutation": "drop_terminal_hop"
+            "The path omits its final hop and stops before the requested terminal."
+          ]
         }
       ]
     },
     {
-      "question": "what college did matt lauer attend",
+      "question": "What form of currency is used in the nation where you'd find Rio de Janeiro?",
       "decomposition": [
-        "What is the education of person Matt Lauer? What is the institution of the education?",
-        "College/University is the notable types of the topic."
+        "Rio de Janeiro is the administrative divisions of the country. What is the currency used of the country?"
       ],
       "source": {
+        "dataset": "CWQ",
         "split": "train",
-        "file": "data/webqsp/finetune/decompose_train.json",
-        "row_index": 50,
-        "verified_official_train": true,
-        "max_test_text_similarity": 0.8285714285714286
+        "row_index": 23,
+        "source_id": "WebQTrn-431_593bfb1e8da51c4ccd9f768e8f3acd97",
+        "source_query_sha256": "9f89ca19059367b22bf83022fb55ab9774d24a1432729e85c8ebe1421e1e4b4f",
+        "target_sha256": "3076f7308251d9dba9d714840a6d706d7d3193265f7379dcfc636ba7470cf6c9",
+        "stage_alignment_verified": true,
+        "source_graph_verified": true,
+        "entity_bindings_verified": true
       },
       "corruptions": [
         {
           "decomposition": [
-            "What is the education of person Matt Lauer? What is the institution of the education?"
+            "What is the name of Rio de Janeiro?"
           ],
+          "mutation": "replace_requested_attribute",
           "issues": [
-            "LOST_CONSTRAINT: question requires College/University is the notable types of the topic. but this condition is absent from the current path."
-          ],
-          "mutation": "drop_constraint_item"
-        },
-        {
-          "decomposition": [
-            "What is the education of person Matt Lauer?",
-            "College/University is the notable types of the topic."
-          ],
-          "issues": [
-            "BROKEN_PATH: question what college did matt lauer attend requires the terminal question What is the institution of the education? but the current path only asks What is the education of person Matt Lauer?"
-          ],
-          "mutation": "drop_terminal_hop"
-        }
-      ]
-    },
-    {
-      "question": "what influenced vincent van gogh work",
-      "decomposition": [
-        "What is influence node Vincent van Gogh influenced by?"
-      ],
-      "source": {
-        "split": "train",
-        "file": "data/webqsp/finetune/decompose_train.json",
-        "row_index": 132,
-        "verified_official_train": true,
-        "max_test_text_similarity": 0.5641025641025641
-      },
-      "corruptions": [
-        {
-          "decomposition": [
-            "Who did Vincent van Gogh influence?"
-          ],
-          "issues": [
-            "WRONG_DIRECTION: the question asks for influences on the person, while this path asks for people influenced by him."
-          ],
-          "mutation": "invert_relation_direction"
-        }
-      ]
-    },
-    {
-      "question": "what are the basic beliefs of sikhism",
-      "decomposition": [
-        "What is the beliefs of religion Sikhism?"
-      ],
-      "source": {
-        "split": "train",
-        "file": "data/webqsp/finetune/decompose_train.json",
-        "row_index": 207,
-        "verified_official_train": true,
-        "max_test_text_similarity": 0.6493506493506493
-      },
-      "corruptions": [
-        {
-          "decomposition": [
-            "What is the name of religion Sikhism?"
-          ],
-          "issues": [
-            "WRONG_TARGET: this train question asks for beliefs, not the name of the religion."
-          ],
-          "mutation": "replace_requested_attribute"
-        }
-      ]
-    },
-    {
-      "question": "what are the official languages in spain",
-      "decomposition": [
-        "Who is the official language of country Spain?"
-      ],
-      "source": {
-        "split": "train",
-        "file": "data/webqsp/finetune/decompose_train.json",
-        "row_index": 1253,
-        "verified_official_train": true,
-        "max_test_text_similarity": 0.8333333333333334
-      },
-      "corruptions": [
-        {
-          "decomposition": [
-            "What are the languages spoken of country Spain?"
-          ],
-          "issues": [
-            "LOST_CONSTRAINT: spoken language does not retain the requested official status."
-          ],
-          "mutation": "remove_official_relation_qualifier"
-        }
-      ]
-    },
-    {
-      "question": "what musical instruments did duke ellington play",
-      "decomposition": [
-        "What is the instruments played of group member Duke Ellington?"
-      ],
-      "source": {
-        "split": "train",
-        "file": "data/webqsp/finetune/decompose_train.json",
-        "row_index": 935,
-        "verified_official_train": true,
-        "max_test_text_similarity": 0.7291666666666666
-      },
-      "corruptions": []
-    },
-    {
-      "question": "what country is next to russia",
-      "decomposition": [
-        "What is the adjoin s of location Russia? What is the adjoins of the adjoining relationship?",
-        "Country is the notable types of the topic."
-      ],
-      "source": {
-        "split": "train",
-        "file": "data/webqsp/finetune/decompose_train.json",
-        "row_index": 980,
-        "verified_official_train": true,
-        "max_test_text_similarity": 0.7333333333333333
-      },
-      "corruptions": [
-        {
-          "decomposition": [
-            "What is the adjoin s of location Russia? What is the adjoins of the adjoining relationship?"
-          ],
-          "issues": [
-            "LOST_CONSTRAINT: question requires Country is the notable types of the topic. but this condition is absent from the current path."
-          ],
-          "mutation": "drop_constraint_item"
-        }
-      ]
-    },
-    {
-      "question": "Who was the 1996 coach of the team owned by Jerry Jones?",
-      "decomposition": [
-        "Jerry Jones is the owner s of the professional sports team. Who is the historical coaching staff of the football team? Who is the coach of the football historical coach position?",
-        "1996 overlaps the tenure of the football historical coach position."
-      ],
-      "source": {
-        "split": "CWQ train",
-        "operator_file": "assets/data/cwq/cwq_operator_train.json",
-        "decompose_file": "assets/data/cwq/cwq_decompose_train.json",
-        "row_index": 4,
-        "verified_official_train": true,
-        "test_question_overlap": false,
-        "augmentation": "Constraint clauses derived ONLY from this train question and its train operators."
-      },
-      "corruptions": [
-        {
-          "decomposition": [
-            "Jerry Jones is the owner s of the professional sports team. Who is the historical coaching staff of the football team? Who is the coach of the football historical coach position?"
-          ],
-          "issues": [
-            "LOST_CONSTRAINT: the explicit year, event type or extrema from the train question was omitted."
-          ],
-          "mutation": "remove_train_question_constraint_clauses"
-        }
-      ],
-      "source_decomposition": [
-        "Jerry Jones is the owner s of the professional sports team. Who is the historical coaching staff of the football team? Who is the coach of the football historical coach position?"
-      ]
-    },
-    {
-      "question": "When did the team who has Terry Collins in leadership last win the world series?",
-      "decomposition": [
-        "Terry Collins is the person of the leadership. He/She is the leadership of the organization. When is the championships of the sports team?",
-        "World Series is the type of the championship event.",
-        "Return the latest championship event by its end date."
-      ],
-      "source": {
-        "split": "CWQ train",
-        "operator_file": "assets/data/cwq/cwq_operator_train.json",
-        "decompose_file": "assets/data/cwq/cwq_decompose_train.json",
-        "row_index": 11,
-        "verified_official_train": true,
-        "test_question_overlap": false,
-        "augmentation": "Constraint clauses derived ONLY from this train question and its train operators."
-      },
-      "corruptions": [
-        {
-          "decomposition": [
-            "Terry Collins is the person of the leadership. He/She is the leadership of the organization. When is the championships of the sports team?"
-          ],
-          "issues": [
-            "LOST_CONSTRAINT: the explicit year, event type or extrema from the train question was omitted."
-          ],
-          "mutation": "remove_train_question_constraint_clauses"
-        }
-      ],
-      "source_decomposition": [
-        "Terry Collins is the person of the leadership. He/She is the leadership of the organization. When is the championships of the sports team?"
-      ]
-    },
-    {
-      "question": "In what year did the basketball team whose head coach is Kevin McHale win their first championship game?",
-      "decomposition": [
-        "Kevin McHale is the head coach of the basketball team. What is the championships of the sports team?",
-        "Return the earliest championship event by its start date, then its year."
-      ],
-      "source": {
-        "split": "CWQ train",
-        "operator_file": "assets/data/cwq/cwq_operator_train.json",
-        "decompose_file": "assets/data/cwq/cwq_decompose_train.json",
-        "row_index": 34,
-        "verified_official_train": true,
-        "test_question_overlap": false,
-        "augmentation": "Constraint clauses derived ONLY from this train question and its train operators."
-      },
-      "corruptions": [
-        {
-          "decomposition": [
-            "Kevin McHale is the head coach of the basketball team. What is the championships of the sports team?"
-          ],
-          "issues": [
-            "LOST_CONSTRAINT: the explicit year, event type or extrema from the train question was omitted."
-          ],
-          "mutation": "remove_train_question_constraint_clauses"
-        }
-      ],
-      "source_decomposition": [
-        "Kevin McHale is the head coach of the basketball team. What is the championships of the sports team?"
-      ]
-    },
-    {
-      "question": "what country was theodor schwann born in",
-      "source_decomposition": [
-        "What is the place of birth of person Theodor Schwann?"
-      ],
-      "decomposition": [
-        "What is the place of birth of person Theodor Schwann? What is location the place of birth containedby?",
-        "Country is the notable type of the containing location."
-      ],
-      "source": {
-        "split": "train",
-        "file": "data/webqsp/finetune/decompose_train.json",
-        "row_index": 1929,
-        "verified_official_train": true,
-        "max_test_text_similarity": 0.6666666666666666,
-        "augmentation": "Country hop/type derived from the explicit COUNTRY in this train question; original train decomposition was incomplete."
-      },
-      "corruptions": [
-        {
-          "decomposition": [
-            "What is the place of birth of person Theodor Schwann?"
-          ],
-          "issues": [
-            "BROKEN_PATH: this train question explicitly requests a country, but the current path ends at an unconstrained birthplace."
-          ],
-          "mutation": "drop_terminal_hop"
+            "The plan returns the anchor's name instead of following the required bridge to the requested answer."
+          ]
         }
       ]
     }

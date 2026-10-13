@@ -1,145 +1,163 @@
 {
-  "version": "cwq-global-preserve-v1",
-  "source": "CWQ test results; examples are outside the first-20 regression slice",
+  "version": "cwq-train-preserve-v2",
+  "source": "official CWQ TRAIN aligned stage annotations",
   "examples": [
     {
-      "source_index": 42,
-      "question": "What is the most recent event in which the sports team owned by James L. Dolan won the championship?",
+      "source_index": 24,
+      "question": "Where did the illustrator of \"De Divina Proportione\" die?",
       "decomposition": [
-        "James L. Dolan is the owner s of the professional sports team. What is the championships of the sports team?"
+        "De divina proportione is the books illustrated of the illustrator. What is the place of death of the deceased person?"
       ],
-      "coverage": [
-        "owner_to_team",
-        "championship_candidate",
-        "operator_inferred_from_question"
-      ],
+      "source": {
+        "dataset": "CWQ",
+        "split": "train",
+        "row_index": 24,
+        "source_id": "WebQTrn-401_0db5dafcef666da2d314e42c8fbe8ecf",
+        "source_query_sha256": "030200b57a9163910b8b91814aaa53f472124af55a4f2fffc69db40ba5181b6d",
+        "target_sha256": "a44ff52994f99de897378c95f9ff825ad9f017ea9f6e3acb58ee3c825c60d5ba",
+        "stage_alignment_verified": true,
+        "source_graph_verified": true,
+        "entity_bindings_verified": true
+      },
       "verification": {
-        "full_pipeline_verified": true,
-        "candidate_f1": 1.0,
-        "candidate_exact": true
+        "split": "train",
+        "stage_alignment_verified": true,
+        "source_graph_verified": true,
+        "entity_bindings_verified": true,
+        "full_pipeline_verified": false,
+        "validation_scope": "offline TRAIN graph alignment, not endpoint F1"
       }
     },
     {
       "source_index": 26,
-      "question": "Where did Tennessee Williams go to college where the newspaper is \"The Maneater\"?",
+      "question": "The Yale Herald is the newspaper of the educational institution located where?",
       "decomposition": [
-        "What is the education of person Tennessee Williams? What is the institution of the education?",
-        "College/University is the notable types of the topic.",
-        "The Maneater is the newspaper of the educational institution."
+        "The Yale Herald is the newspaper of the educational institution. What is the headquarters of the organization? What is the citytown of the mailing address?"
       ],
-      "coverage": [
-        "education_cvt",
-        "type_constraint",
-        "shared_institution_constraint"
-      ],
+      "source": {
+        "dataset": "CWQ",
+        "split": "train",
+        "row_index": 26,
+        "source_id": "WebQTest-1502_e156bf65419139d44754fb81aa3e30b8",
+        "source_query_sha256": "f8e40eb38f4fe781deb772b1d44479e345615797b69c434877b49d5c53e83695",
+        "target_sha256": "6d040076eec1a525503c8ead146e8ebb2477bfa21918110a18c9253876f76823",
+        "stage_alignment_verified": true,
+        "source_graph_verified": true,
+        "entity_bindings_verified": true
+      },
       "verification": {
-        "full_pipeline_verified": true,
-        "candidate_f1": 1.0,
-        "candidate_exact": true
+        "split": "train",
+        "stage_alignment_verified": true,
+        "source_graph_verified": true,
+        "entity_bindings_verified": true,
+        "full_pipeline_verified": false,
+        "validation_scope": "offline TRAIN graph alignment, not endpoint F1"
+      }
+    },
+    {
+      "source_index": 27,
+      "question": "What is the capital city of the geographic division where the religious organizational leadership is called the Orthodox Autocephalous Church of Albania?",
+      "decomposition": [
+        "Orthodox Autocephalous Church of Albania is the organization of the religious organization leadership. He/She is the leader of the religious leadership jurisdiction. What is the capital of the country?"
+      ],
+      "source": {
+        "dataset": "CWQ",
+        "split": "train",
+        "row_index": 27,
+        "source_id": "WebQTrn-649_393a33dcb20ef2557af16ed69eb41e7a",
+        "source_query_sha256": "d89adf42d128c0ee7ef38bbf0293c0ed746ee265d2ff65290200b0ae2430b902",
+        "target_sha256": "2c086e56ef5385e80c8954877db3cc7765a965ad424bce1e435b615dfe697c0c",
+        "stage_alignment_verified": true,
+        "source_graph_verified": true,
+        "entity_bindings_verified": true
+      },
+      "verification": {
+        "split": "train",
+        "stage_alignment_verified": true,
+        "source_graph_verified": true,
+        "entity_bindings_verified": true,
+        "full_pipeline_verified": false,
+        "validation_scope": "offline TRAIN graph alignment, not endpoint F1"
       }
     },
     {
       "source_index": 28,
-      "question": "What are the governmental types in the country whose national anthem is Tien Quan Ca?",
+      "question": "Which countries are located in a place that slightly contains Italy?",
       "decomposition": [
-        "Tiến Quân Ca is the anthem of the national anthem of a country. It is the national anthem of the country. What is the form of government of the country?"
+        "Italy is the partially contains of the partial containment relationship. It is the partiallycontains of the location. What is the adjoin s of the location? What is the adjoins of the adjoining relationship?",
+        "Country is the notable types of the topic."
       ],
-      "coverage": [
-        "bridge_chain",
-        "terminal_answer"
-      ],
+      "source": {
+        "dataset": "CWQ",
+        "split": "train",
+        "row_index": 28,
+        "source_id": "WebQTrn-3322_1fec20005da44b5d36882c91119c3be3",
+        "source_query_sha256": "9126fc879ee199e0eef95a7389bf74d646c7ec3f0c101f8f445c84dd3bf4b192",
+        "target_sha256": "8ce2f54bf2429af0c966ae114614dafbf136cd87257c31575565603e973a3926",
+        "stage_alignment_verified": true,
+        "source_graph_verified": true,
+        "entity_bindings_verified": true
+      },
       "verification": {
-        "full_pipeline_verified": true,
-        "candidate_f1": 1.0,
-        "candidate_exact": true
+        "split": "train",
+        "stage_alignment_verified": true,
+        "source_graph_verified": true,
+        "entity_bindings_verified": true,
+        "full_pipeline_verified": false,
+        "validation_scope": "offline TRAIN graph alignment, not endpoint F1"
       }
     },
     {
-      "source_index": 45,
-      "question": "In the film with teh character named Winged Monkey #7, who played Dorothy?",
+      "source_index": 29,
+      "question": "What religion was followed by the person who once lived in Fotheringhay Castle?",
       "decomposition": [
-        "Winged Monkey #7 is the character of the performance. It is the starring of the film. What is the starring of the film? Who is the actor of the performance?",
-        "Dorothy Gale is the character of the performance."
+        "Fotheringhay Castle is the location of the place lived. It is the places lived of the person. What is the religion of the person?"
       ],
-      "coverage": [
-        "film_performance_cvt",
-        "shared_film",
-        "character_constraint"
-      ],
+      "source": {
+        "dataset": "CWQ",
+        "split": "train",
+        "row_index": 29,
+        "source_id": "WebQTrn-1805_29f5e796d4d3b8d50fd13c5423e9d67a",
+        "source_query_sha256": "faef840a26fff91479211dafaacf3d2bd8a033a4123090c2ffac9fc192d0b1db",
+        "target_sha256": "7861e510b3a4d43b544e092b7d00488e939abe2f3f2e656bfbb38e4be0e0f7be",
+        "stage_alignment_verified": true,
+        "source_graph_verified": true,
+        "entity_bindings_verified": true
+      },
       "verification": {
-        "full_pipeline_verified": true,
-        "candidate_f1": 1.0,
-        "candidate_exact": true
+        "split": "train",
+        "stage_alignment_verified": true,
+        "source_graph_verified": true,
+        "entity_bindings_verified": true,
+        "full_pipeline_verified": false,
+        "validation_scope": "offline TRAIN graph alignment, not endpoint F1"
       }
     },
     {
-      "source_index": 56,
-      "question": "Who was the vice president of the President who attended Ramble Elementary School?",
+      "source_index": 30,
+      "question": "What college football team has the mascot of a duck and included John Madden as a former player?",
       "decomposition": [
-        "Ramble Elementary School is the institution of the education. It is the education of the person. Who is the vice president of the us president?"
+        "What is the teams of pro athlete John Madden? What is the team of the sports team roster?",
+        "University of Oregon The Oregon Duck is the team mascot of the sports team."
       ],
-      "coverage": [
-        "education_bridge",
-        "person_chain",
-        "requested_terminal"
-      ],
+      "source": {
+        "dataset": "CWQ",
+        "split": "train",
+        "row_index": 30,
+        "source_id": "WebQTrn-2074_51ba1687982fdf381c47b15468788107",
+        "source_query_sha256": "0bec3cf9b241083d41602515df3d9a80596e141e52966f73f71b3461c09dc526",
+        "target_sha256": "e3692a11aa281b7845c06c78a6d011e0227daee2ae31e8244fac80faa708d887",
+        "stage_alignment_verified": true,
+        "source_graph_verified": true,
+        "entity_bindings_verified": true
+      },
       "verification": {
-        "full_pipeline_verified": true,
-        "candidate_f1": 1.0,
-        "candidate_exact": true
-      }
-    },
-    {
-      "source_index": 78,
-      "question": "Which of the seven Central American countries uses the United States Dollar currency?",
-      "decomposition": [
-        "What is location Central America contains?",
-        "Country is the notable types of the topic.",
-        "United States Dollar is the currency used of the country."
-      ],
-      "coverage": [
-        "location_intersection",
-        "type_constraint",
-        "currency_constraint"
-      ],
-      "verification": {
-        "full_pipeline_verified": true,
-        "candidate_f1": 1.0,
-        "candidate_exact": true
-      }
-    },
-    {
-      "source_index": 24,
-      "question": "WHat movies have the actress who is an alumni for West Reading El Ctr a part of?",
-      "decomposition": [
-        "West Reading El Ctr is the institution of the education. It is the education of the person. What is the film of the actor? What is the film of the performance?"
-      ],
-      "coverage": [
-        "education_bridge",
-        "actor_performance",
-        "film_terminal"
-      ],
-      "verification": {
-        "full_pipeline_verified": true,
-        "candidate_f1": 1.0,
-        "candidate_exact": true
-      }
-    },
-    {
-      "source_index": 10,
-      "question": "In which countries do the people speak Portuguese, where the child labor percentage was once 1.8?",
-      "decomposition": [
-        "What is human language Portuguese Language countries spoken in?"
-      ],
-      "coverage": [
-        "numeric_constraint_owned_by_operator",
-        "country_candidate_path",
-        "preserve_gold_reasoning_decomposition"
-      ],
-      "verification": {
-        "full_pipeline_verified": true,
-        "candidate_f1": 1.0,
-        "candidate_exact": true
+        "split": "train",
+        "stage_alignment_verified": true,
+        "source_graph_verified": true,
+        "entity_bindings_verified": true,
+        "full_pipeline_verified": false,
+        "validation_scope": "offline TRAIN graph alignment, not endpoint F1"
       }
     }
   ]

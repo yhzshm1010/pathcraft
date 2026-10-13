@@ -1,0 +1,229 @@
+{
+  "schema": "cwq-review-train-provenance-v1",
+  "split": "train",
+  "policy": "CWQ TRAIN stage annotations verified against official TRAIN query graphs; controlled corruptions only; no test-derived repairs or answer facts.",
+  "selection": "first 17 distinct compact source-graph-isomorphic aligned TRAIN rows; no metric-based ranking",
+  "repair_count": 11,
+  "preserve_count": 6,
+  "model_calls": 0,
+  "endpoint_calls": 0,
+  "sources": [
+    {
+      "file": "data/train/cwq/decompose_train.json",
+      "sha256": "ccd3dc6c9e14d40c9c48ca359322b0eef7b73be6c3351674b07a79edec3caf95"
+    },
+    {
+      "file": "data/train/cwq/semantic_path_train.json",
+      "sha256": "2456901b4948d3d3235c48a41ccf082c9930588cc0ff66a0dc036660c83c57ac"
+    },
+    {
+      "file": "data/train/cwq/compose_train.json",
+      "sha256": "318c8fdd3278194db13c0544804a3de4315ae8a827165379c04b1688ed1c7b7c"
+    },
+    {
+      "file": "data/train/cwq/operator_train.json",
+      "sha256": "8b48e5ce3ce3c7816e1228449dccd9dcc432430dd141c23f8ebcd81e010743d7"
+    }
+  ],
+  "official_train": {
+    "file": "assets/data/cwq/ComplexWebQuestions_train.json",
+    "sha256": "5d88a0b20afadcff10b275113074068b086871fa6698a68022d2dc40ce75d10e"
+  },
+  "train_entity_annotations": {
+    "file": "provided CWQ TRAIN annotations",
+    "member": "KaeDe-main/data/processed/CWQ/CWQ_train_extracted.json",
+    "sha256": "79723fe4da7397128536fa04bebb2c9284b36140fae4e514de615246149f1f02",
+    "only_topic_entity_mapping_used": true
+  },
+  "heldout_question_exclusion_applied": true,
+  "heldout_text_overlap": 0,
+  "examples": [
+    {
+      "dataset": "CWQ",
+      "split": "train",
+      "row_index": 0,
+      "source_id": "WebQTrn-3513_7c4117891abf63781b892537979054c6",
+      "source_query_sha256": "30d1725ad18dfb357e3802d036ef32cc02a5f9738007d01f041d16bb0bb74991",
+      "target_sha256": "eac09db1dcd622a46e9f6fffa952e9ab64c3c82f8c56d5565c237ccfdf0c4f57",
+      "stage_alignment_verified": true,
+      "source_graph_verified": true,
+      "entity_bindings_verified": true
+    },
+    {
+      "dataset": "CWQ",
+      "split": "train",
+      "row_index": 1,
+      "source_id": "WebQTrn-2360_a40a0d50b9a1006e2d254705d46345ea",
+      "source_query_sha256": "a9efad1b27d9fd9539b1e8ece5a5b8aad4805e33284040560d745f7da476d946",
+      "target_sha256": "cf851f55956ffac6255f9a3a289716763b200aa8eab00c9e154910b72ee4d366",
+      "stage_alignment_verified": true,
+      "source_graph_verified": true,
+      "entity_bindings_verified": true
+    },
+    {
+      "dataset": "CWQ",
+      "split": "train",
+      "row_index": 5,
+      "source_id": "WebQTest-1085_1cffc5c553afc1802970e8a6064cac32",
+      "source_query_sha256": "dc82e81f705b11462f1eb84676654369bb92e1b3ddbf868187b3d727e5326f1f",
+      "target_sha256": "306c80c66ef52285374743297a91c129e4431b6a56d754fbb644b66a5564a390",
+      "stage_alignment_verified": true,
+      "source_graph_verified": true,
+      "entity_bindings_verified": true
+    },
+    {
+      "dataset": "CWQ",
+      "split": "train",
+      "row_index": 6,
+      "source_id": "WebQTrn-2581_321be15dae483ed949b74cf01e259708",
+      "source_query_sha256": "3742d65e6085fc6b356da80c8bb3d371e4e1a67213eea9b0e94f861b941e2400",
+      "target_sha256": "fdc22facb4a7e812ae8a9598309267cd22c580a6a37bb00b280ece77a52af8e2",
+      "stage_alignment_verified": true,
+      "source_graph_verified": true,
+      "entity_bindings_verified": true
+    },
+    {
+      "dataset": "CWQ",
+      "split": "train",
+      "row_index": 8,
+      "source_id": "WebQTrn-2773_7f835727d3cecbcb6c6b48db1fe147b9",
+      "source_query_sha256": "11104a9829b25d2cb85358dc0e3f791d78f3c82fd93f7965df6286fd9139e038",
+      "target_sha256": "edebdc288869ddfa9d30426afa4f99acf5896bb4f45e446d0e66833603dc5b8a",
+      "stage_alignment_verified": true,
+      "source_graph_verified": true,
+      "entity_bindings_verified": true
+    },
+    {
+      "dataset": "CWQ",
+      "split": "train",
+      "row_index": 9,
+      "source_id": "WebQTrn-2946_93c6dae3d218dbe112d4120f45c93298",
+      "source_query_sha256": "c3545b3474a71960196338c62b97b7677bc32b142523bb1cbc87b17dfdb66f56",
+      "target_sha256": "1e61a6db001d68149b4fb2287f02e9b9c22a3d2258ab4910d5eeee37f7eed51b",
+      "stage_alignment_verified": true,
+      "source_graph_verified": true,
+      "entity_bindings_verified": true
+    },
+    {
+      "dataset": "CWQ",
+      "split": "train",
+      "row_index": 13,
+      "source_id": "WebQTrn-388_72afc30add424e52cbe00b736509ec22",
+      "source_query_sha256": "9ddabb36088902be19e7dd22ddabcf5a278e9cda0d62d581a9b0adb30f6127f9",
+      "target_sha256": "252f4e98eaa49c5e5758a00cef7c404863ee4c267c0422b9ba7920e84e5f5842",
+      "stage_alignment_verified": true,
+      "source_graph_verified": true,
+      "entity_bindings_verified": true
+    },
+    {
+      "dataset": "CWQ",
+      "split": "train",
+      "row_index": 15,
+      "source_id": "WebQTrn-37_51530e5585466e3d69fbf894a0125e3b",
+      "source_query_sha256": "0af35ee79304ea6de6281df444122442daf083a408971c4d6529b9655e733a7a",
+      "target_sha256": "1973dc194f240b4043299325e7ebf5178416a8b9ba868063706fb49decb769c0",
+      "stage_alignment_verified": true,
+      "source_graph_verified": true,
+      "entity_bindings_verified": true
+    },
+    {
+      "dataset": "CWQ",
+      "split": "train",
+      "row_index": 17,
+      "source_id": "WebQTrn-2649_49cff836e2d4d893a9e364573ab1e3c2",
+      "source_query_sha256": "2028594c6ac392e015aafa278e11bfaae618c27170be2dd069ac796e6de60b02",
+      "target_sha256": "de57fe21a7828f316ecd8744e601c7984fd1fe36d839d3ee7fcb904e1c8c3254",
+      "stage_alignment_verified": true,
+      "source_graph_verified": true,
+      "entity_bindings_verified": true
+    },
+    {
+      "dataset": "CWQ",
+      "split": "train",
+      "row_index": 22,
+      "source_id": "WebQTrn-0_4",
+      "source_query_sha256": "3bf655aa4dede7a1824f25f3acc3b1f671dfdd4b07586083aad648c5f7ce1694",
+      "target_sha256": "a47f2796ae3186c1f78d761ec190f24baf9461f7569ccb3e8091a5020aef91eb",
+      "stage_alignment_verified": true,
+      "source_graph_verified": true,
+      "entity_bindings_verified": true
+    },
+    {
+      "dataset": "CWQ",
+      "split": "train",
+      "row_index": 23,
+      "source_id": "WebQTrn-431_593bfb1e8da51c4ccd9f768e8f3acd97",
+      "source_query_sha256": "9f89ca19059367b22bf83022fb55ab9774d24a1432729e85c8ebe1421e1e4b4f",
+      "target_sha256": "3076f7308251d9dba9d714840a6d706d7d3193265f7379dcfc636ba7470cf6c9",
+      "stage_alignment_verified": true,
+      "source_graph_verified": true,
+      "entity_bindings_verified": true
+    },
+    {
+      "dataset": "CWQ",
+      "split": "train",
+      "row_index": 24,
+      "source_id": "WebQTrn-401_0db5dafcef666da2d314e42c8fbe8ecf",
+      "source_query_sha256": "030200b57a9163910b8b91814aaa53f472124af55a4f2fffc69db40ba5181b6d",
+      "target_sha256": "a44ff52994f99de897378c95f9ff825ad9f017ea9f6e3acb58ee3c825c60d5ba",
+      "stage_alignment_verified": true,
+      "source_graph_verified": true,
+      "entity_bindings_verified": true
+    },
+    {
+      "dataset": "CWQ",
+      "split": "train",
+      "row_index": 26,
+      "source_id": "WebQTest-1502_e156bf65419139d44754fb81aa3e30b8",
+      "source_query_sha256": "f8e40eb38f4fe781deb772b1d44479e345615797b69c434877b49d5c53e83695",
+      "target_sha256": "6d040076eec1a525503c8ead146e8ebb2477bfa21918110a18c9253876f76823",
+      "stage_alignment_verified": true,
+      "source_graph_verified": true,
+      "entity_bindings_verified": true
+    },
+    {
+      "dataset": "CWQ",
+      "split": "train",
+      "row_index": 27,
+      "source_id": "WebQTrn-649_393a33dcb20ef2557af16ed69eb41e7a",
+      "source_query_sha256": "d89adf42d128c0ee7ef38bbf0293c0ed746ee265d2ff65290200b0ae2430b902",
+      "target_sha256": "2c086e56ef5385e80c8954877db3cc7765a965ad424bce1e435b615dfe697c0c",
+      "stage_alignment_verified": true,
+      "source_graph_verified": true,
+      "entity_bindings_verified": true
+    },
+    {
+      "dataset": "CWQ",
+      "split": "train",
+      "row_index": 28,
+      "source_id": "WebQTrn-3322_1fec20005da44b5d36882c91119c3be3",
+      "source_query_sha256": "9126fc879ee199e0eef95a7389bf74d646c7ec3f0c101f8f445c84dd3bf4b192",
+      "target_sha256": "8ce2f54bf2429af0c966ae114614dafbf136cd87257c31575565603e973a3926",
+      "stage_alignment_verified": true,
+      "source_graph_verified": true,
+      "entity_bindings_verified": true
+    },
+    {
+      "dataset": "CWQ",
+      "split": "train",
+      "row_index": 29,
+      "source_id": "WebQTrn-1805_29f5e796d4d3b8d50fd13c5423e9d67a",
+      "source_query_sha256": "faef840a26fff91479211dafaacf3d2bd8a033a4123090c2ffac9fc192d0b1db",
+      "target_sha256": "7861e510b3a4d43b544e092b7d00488e939abe2f3f2e656bfbb38e4be0e0f7be",
+      "stage_alignment_verified": true,
+      "source_graph_verified": true,
+      "entity_bindings_verified": true
+    },
+    {
+      "dataset": "CWQ",
+      "split": "train",
+      "row_index": 30,
+      "source_id": "WebQTrn-2074_51ba1687982fdf381c47b15468788107",
+      "source_query_sha256": "0bec3cf9b241083d41602515df3d9a80596e141e52966f73f71b3461c09dc526",
+      "target_sha256": "e3692a11aa281b7845c06c78a6d011e0227daee2ae31e8244fac80faa708d887",
+      "stage_alignment_verified": true,
+      "source_graph_verified": true,
+      "entity_bindings_verified": true
+    }
+  ]
+}

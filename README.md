@@ -104,6 +104,30 @@ QUESTION_WORKERS=4 bash scripts/run_cwq.sh \
 
 Only question and provided entity links enter initial decomposition; source gold answers/SPARQL are not inserted. This project retains the original gold-entity input protocol. The example API names/paths must match your deployed models. If you do not want GLM review, add `--no-decomposition-review`.
 
+The active `two_call/cwq` Review and Rewrite prompts now use only frozen CWQ
+TRAIN demonstrations. There are 6 preserve and 11 controlled-repair examples:
+17 in Review and 11 in Rewrite. Targets are copied from aligned TRAIN rows;
+graph structure, answer-variable identity and entity bindings are checked
+against official TRAIN queries/annotations offline. This is not an endpoint
+F1 certification. The legacy resource filenames are retained for compatibility;
+source hashes and row IDs are in `resources/cwq_review_train_provenance.json`.
+No test-question repairs, Gold answer lists or raw SPARQL enter these prompts.
+
+Rebuild/audit the demonstrations using your own official TRAIN inputs:
+
+```bash
+python3 scripts/build_cwq_review_train_examples.py \
+  --source-train /path/to/ComplexWebQuestions_train.json \
+  --train-entity-records /path/to/CWQ_train_extracted.json \
+  --heldout-questions /path/to/heldout_questions.json
+```
+
+Replacing demonstrations changes prompt content, not the review call budget,
+response schemas, inference rules or scoring. Frozen rule/calibration provenance
+and existing post-hoc risk disclosures remain intact. This change does not
+retroactively validate historical results or saved Review responses; a new
+Review run is required to evaluate the TRAIN-only prompt configuration.
+
 Outputs are generated under ignored `outputs/`. Internal in-memory stage evidence remains necessary for the runtime safety/recovery code; no historical trace is shipped. The launcher does not request separate per-question artifact files. The GLM model switch can change predictions: this release does not claim to reproduce previously reported GLM-5.3 metrics without a new run.
 
 ## Evaluation and publication cleanup

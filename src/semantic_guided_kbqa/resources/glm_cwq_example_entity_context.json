@@ -1,67 +1,151 @@
 {
-  "What was the name of the team that won the 2008 FIFA Club World Cup Final championship?": [
-    {"id": "m.053nq3y", "name": "2008 FIFA Club World Cup Final", "types": ["Event", "Football Match"], "start_date": "2008"}
+  "What state is home to the university that is represented in sports by George Washington Colonials men's basketball?": [
+    {
+      "id": "m.03d0l76",
+      "name": "George Washington Colonials men's basketball",
+      "types": []
+    }
   ],
-  "What does the religion who worships in Barcelona Cathedral call their God?": [
-    {"id": "m.0vlyb", "name": "Barcelona Cathedral", "types": ["Building", "Place of worship"]}
+  "Which school with the fight song \"The Orange and Blue\" did Emmitt Smith play for?": [
+    {
+      "id": "m.01480y",
+      "name": "Emmitt Smith",
+      "types": []
+    },
+    {
+      "id": "m.04f__h7",
+      "name": "The Orange and Blue",
+      "types": []
+    }
   ],
-  "Who did the voice of character Kovu?": [
-    {"id": "m.0bnznr", "name": "Kovu", "types": ["Fictional Character", "Film character"]}
+  "Who dated the performer who headlined the concert tour called Demi World Tour?": [
+    {
+      "id": "m.010pzj9k",
+      "name": "Demi World Tour",
+      "types": []
+    }
   ],
-  "What movie was Miley Cyrus in with a character named Theresa Russo?": [
-    {"id": "m.0bdxs5", "name": "Miley Cyrus", "types": ["Person", "Film actor", "TV Actor"]},
-    {"id": "g.121sxjvg", "name": "Theresa Russo", "types": ["Fictional Character", "Film character", "TV Character"]}
+  "Which team owned by Malcolm Glazer has Tim Howard playing for it?": [
+    {
+      "id": "m.026s3n",
+      "name": "Tim Howard",
+      "types": []
+    },
+    {
+      "id": "m.043cq6",
+      "name": "Malcolm Glazer",
+      "types": []
+    }
   ],
-  "What college with the least number of undergraduates did Charles Drew attend?": [
-    {"id": "m.018t67", "name": "Charles R. Drew", "types": ["Person", "Physician", "Academic"]},
-    {"id": "m.01y2hnl", "name": "College/University", "types": ["Type"]}
+  "What business titles was the most famous alumni of Detroit Business Institute best known for?": [
+    {
+      "id": "m.09ggd7n",
+      "name": "Detroit Business Institute",
+      "types": []
+    }
   ],
-  "What college did Drew Brees attend that has number of undergraduates the largest?": [
-    {"id": "m.030bdd", "name": "Drew Brees", "types": ["Person", "Athlete", "American football player"]},
-    {"id": "m.01y2hnl", "name": "College/University", "types": ["Type"]}
+  "What team with mascot named Champ did Tyson Chandler play for?": [
+    {
+      "id": "m.05j8c8",
+      "name": "Tyson Chandler",
+      "types": []
+    },
+    {
+      "id": "m.0kh6jz4",
+      "name": "Champ",
+      "types": []
+    }
   ],
-  "Who was an influence to Eleanor Roosevelt and was the US president during World War 2?": [
-    {"id": "m.081pw", "name": "World War II", "types": ["Military Conflict", "Event", "War"], "start_date": "1939-09-01", "end_date": "1945-09-02"},
-    {"id": "m.060d2", "name": "President of the United States", "types": ["Government Office or Title"]},
-    {"id": "m.02n9k", "name": "Eleanor Roosevelt", "types": ["Person", "Politician", "Influence Node"]}
+  "What language is spoken in the country that has Southern Peninsular?": [
+    {
+      "id": "m.08kmfj",
+      "name": "Southern Peninsula",
+      "types": []
+    }
   ],
-  "Who was the voice of Lola Bunny and was nominated in the Gotham Independent Film Award 2009?": [
-    {"id": "m.0534r8", "name": "Lola Bunny", "types": ["Fictional Character", "Film character", "TV Character"]},
-    {"id": "m.02nsjvf", "name": "Voice", "types": ["Special film performance type", "Special TV performance type"]},
-    {"id": "m.080d12s", "name": "Gotham Independent Film Awards 2009", "types": ["Award ceremony", "Event"], "start_date": "2009-11-30", "end_date": "2009-11-30"}
+  "What sport was played by the winners of the 1948 Stanley Cup?": [
+    {
+      "id": "m.03cjpsk",
+      "name": "1948 Stanley Cup Finals",
+      "types": []
+    }
   ],
-  "Which TV series with a \"tvrage_id\" less than 3050 was Mark Harmon the star of?": [
-    {"id": "m.037gjc", "name": "Mark Harmon", "types": ["Person", "TV Actor", "Film actor"]}
+  "A person attending education institution Assuptuion Saint Bridget is from where?": [
+    {
+      "id": "m.02wsngb",
+      "name": "Assuptuion Saint Bridget",
+      "types": []
+    }
   ],
-  "What is the most recent event in which the sports team owned by James L. Dolan won the championship?": [
-    {"id": "m.0469ts", "name": "James L. Dolan", "types": ["Person", "Sports Team Owner"]}
+  "Who is the brother of the actor who played the character Alien on TV Monitors #2?": [
+    {
+      "id": "m.0pbzq16",
+      "name": "Alien on TV Monitors #2",
+      "types": []
+    },
+    {
+      "id": "m.05zppz",
+      "name": "Male",
+      "types": []
+    }
   ],
-  "Where did Tennessee Williams go to college where the newspaper is \"The Maneater\"?": [
-    {"id": "m.0c4y8", "name": "Tennessee Williams", "types": ["Person", "Author"]},
-    {"id": "m.01y2hnl", "name": "College/University", "types": ["Type"]},
-    {"id": "m.04pk3f", "name": "The Maneater", "types": ["School newspaper", "Newspaper"]}
+  "What form of currency is used in the nation where you'd find Rio de Janeiro?": [
+    {
+      "id": "m.01hd4s",
+      "name": "Rio de Janeiro",
+      "types": []
+    }
   ],
-  "What are the governmental types in the country whose national anthem is Tien Quan Ca?": [
-    {"id": "m.01kvf8", "name": "Tiến Quân Ca", "types": ["Composition", "National Anthem"]}
+  "Where did the illustrator of \"De Divina Proportione\" die?": [
+    {
+      "id": "m.06pqb_7",
+      "name": "De divina proportione",
+      "types": []
+    }
   ],
-  "In the film with teh character named Winged Monkey #7, who played Dorothy?": [
-    {"id": "m.0yj6trj", "name": "Winged Monkey #7", "types": ["Fictional Character", "Film character"]},
-    {"id": "m.020hj1", "name": "Dorothy Gale", "types": ["Fictional Character", "Film character"]}
+  "The Yale Herald is the newspaper of the educational institution located where?": [
+    {
+      "id": "m.0544pz",
+      "name": "The Yale Herald",
+      "types": []
+    }
   ],
-  "Who was the vice president of the President who attended Ramble Elementary School?": [
-    {"id": "m.0b6xvr8", "name": "Ramble Elementary", "types": ["Educational Institution"]}
+  "What is the capital city of the geographic division where the religious organizational leadership is called the Orthodox Autocephalous Church of Albania?": [
+    {
+      "id": "m.06yy_g",
+      "name": "Orthodox Autocephalous Church of Albania",
+      "types": []
+    }
   ],
-  "In which countries do the people speak Portuguese, where the child labor percentage was once 1.8?": [
-    {"id": "m.05zjd", "name": "Portuguese Language", "types": ["Human Language"]}
+  "Which countries are located in a place that slightly contains Italy?": [
+    {
+      "id": "m.03rjj",
+      "name": "Italy",
+      "types": []
+    },
+    {
+      "id": "m.01mp",
+      "name": "Country",
+      "types": []
+    }
   ],
-  "In what events that ended prior to 28 October 1981 did the Dodgers win the World Series?": [
-    {"id": "m.04mjl", "name": "Los Angeles Dodgers", "types": ["Baseball Team", "Sports Team"]}
+  "What religion was followed by the person who once lived in Fotheringhay Castle?": [
+    {
+      "id": "m.025s1y5",
+      "name": "Fotheringhay Castle",
+      "types": []
+    }
   ],
-  "When was the last championship won by the 1970 NBA Finals Champions?": [
-    {"id": "m.0cs1x4", "name": "1970 NBA Finals", "types": ["Event", "Sports League Championship Event"], "start_date": "1970-04-24"}
-  ],
-  "Who is the current governor of the governmental jurisdiction in which there's a governmental body called Wyoming House of Representatives?": [
-    {"id": "m.0dwkky", "name": "Wyoming House of Representatives", "types": ["Governmental Body"]},
-    {"id": "m.0fkvn", "name": "Governor", "types": ["Government office category", "Job title", "Leadership Role"]}
+  "What college football team has the mascot of a duck and included John Madden as a former player?": [
+    {
+      "id": "m.0frmb1",
+      "name": "John Madden",
+      "types": []
+    },
+    {
+      "id": "m.03d53pb",
+      "name": "University of Oregon The Oregon Duck",
+      "types": []
+    }
   ]
 }
