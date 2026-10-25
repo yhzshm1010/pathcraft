@@ -146,20 +146,49 @@ Outputs are generated under ignored `outputs/`. Internal in-memory stage evidenc
 
 ## Evaluation and publication cleanup
 
-Only the primary score is produced: precision, recall, F1, Hit (`hits_at_1`),
-and exact set match. Entity answers use canonical Freebase IDs; literal/text
+Only the primary score is produced: precision, recall, F1, ordered first-answer
+hit (`hits_at_1`), and exact set match (`exact_match`). Entity answers use
+canonical Freebase IDs; literal/text
 answers retain the normalized text-set protocol. There are no auxiliary
 substring-label scores. Artifact comparisons and optional baseline-zero
 filters also use the primary score (`--baseline-f1-zero-only` or
 `--baseline-all-f1-zero-only`).
 
+### Hit, first-answer hit, and exact match
+
+These statistics must not be used interchangeably. Let `P` be the normalized,
+deduplicated prediction list and `G` the normalized Gold answer set.
+
+| Statistic | Per-question definition |
+| --- | --- |
+| Historical CWQ summary `Hit` (any-answer overlap) | 1 if at least one predicted answer belongs to `G`; 0 otherwise. Partial recall can still yield 1. |
+| Current runtime `hits_at_1` (first-answer hit) | 1 if `P` is nonempty and its first answer belongs to `G`; 0 otherwise. A correct answer later in `P` does not count. |
+| Current runtime `exact_match` (exact set match) | 1 only if the predicted answer set equals `G`, with neither missing nor extra answers; 0 otherwise. `exact` is its boolean per-row compatibility alias. |
+
+For example, with `G = {a, b}` and `P = [c, a]`, any-answer overlap is 1,
+`hits_at_1` is 0, and `exact_match` is 0. With `P = [a]`, any-answer overlap
+and `hits_at_1` are both 1, although recall is only 0.5 and exact match is 0.
+Recalling every Gold answer is also insufficient for exact match if extra
+incorrect answers are returned.
+
+The evaluator preserves the supplied prediction order after normalization and
+deduplication; it does not rank answers by confidence. Thus, the first element
+of an unordered query result is not automatically a highest-ranked answer.
+The current runtime does **not** emit a separate historical any-answer-overlap
+`Hit` aggregate. In particular, its `hits_at_1` must not be presented as the
+archived CWQ summary's `Hit`, or compared with it as though the definitions
+were identical. This clarification concerns the checked CWQ archive; it does
+not establish the protocol used by every historical result or other dataset.
+
 Metrics are macro-averaged over **all labeled items, including failures**.
-An item with a nonempty `failure` receives zero precision, recall, F1, Hit and
-exact match, even if it retains a partial prediction for diagnostics. Failed
-items stay in the metric denominator and are also saved in the separate error
-output. Only items without evaluable Gold remain unscored; always report the
-processed, scored, unlabeled and error counts. `summary.scored` must equal the
-full test size before calling the summary a full-test average.
+A labeled item with a nonempty `failure` receives zero precision, recall, F1,
+`hits_at_1` and `exact_match`, even if it retains a partial prediction for
+diagnostics. Failed items stay in the metric denominator and are also saved
+in the separate error output. Only items without evaluable Gold remain
+unscored; always report the processed, scored, unlabeled and error counts.
+`summary.scored` must equal the full test size before calling the summary a
+full-test average. These are the current runtime's aggregation rules, not a
+claim about every archived summary's denominator or failure policy.
 
 The protocol version is `answer-id-primary-v4-failures-zero`. Continuation runs
 migrate v3/v2 successful-only aggregates using the complete paired error file,
@@ -170,8 +199,9 @@ until explicitly resumed; archived experiment reports retain their old scores.
 
 The publication cleanup generalizes method-specific wording in Review and
 construction prompts, neutralizes script/configuration names, and removes
-auxiliary label metrics. The primary scoring formula and retrieval budgets
-are unchanged. Prompt wording has changed, so a fresh model run is required
+auxiliary label metrics. This metric-description clarification does not change
+the current runtime's scoring formulas, retrieval budgets, predictions, or
+archived results. Prompt wording has changed, so a fresh model run is required
 before claiming identical end-to-end predictions. Dataset provenance and
 required third-party license notices are deliberately preserved in
 [data/train/NOTICE.md](data/train/NOTICE.md).

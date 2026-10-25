@@ -50,6 +50,33 @@ class PrimaryScoringTests(unittest.TestCase):
         self.assertEqual(row["score"]["hits_at_1"], 0.0)
         self.assertEqual(row["prediction"], ["m.wrong", "m.correct"])
 
+    def test_partial_recall_can_have_first_answer_hit(self):
+        row = score_result_row(
+            {"answer_entities": {"m.first": "First", "m.second": "Second"}},
+            {"prediction": ["m.first"]},
+        )
+        self.assertEqual(row["score"]["recall"], 0.5)
+        self.assertEqual(row["score"]["hits_at_1"], 1.0)
+        self.assertEqual(row["score"]["exact_match"], 0.0)
+        self.assertFalse(row["score"]["exact"])
+
+    def test_full_recall_with_extra_answers_is_not_exact(self):
+        row = score_result_row(
+            {"answer_entities": {"m.correct": "Correct"}},
+            {"prediction": ["m.correct", "m.extra"]},
+        )
+        self.assertEqual(row["score"]["recall"], 1.0)
+        self.assertEqual(row["score"]["hits_at_1"], 1.0)
+        self.assertEqual(row["score"]["exact_match"], 0.0)
+
+    def test_metadata_distinguishes_hit_and_exact_definitions(self):
+        metadata = evaluation_metadata("synthetic")
+        self.assertEqual(metadata["version"], EVALUATION_VERSION)
+        self.assertIn("first normalized, deduplicated prediction", metadata["hits_at_1_definition"])
+        self.assertIn("does not rank", metadata["prediction_order"])
+        self.assertIn("sets are equal", metadata["exact_match_definition"])
+        self.assertIn("not emitted as a separate runtime aggregate", metadata["historical_cwq_hit"])
+
     def test_empty_prediction_is_zero(self):
         row = score_result_row({"answer_entities": {"m.correct": "Correct"}},
                                {"prediction": []})

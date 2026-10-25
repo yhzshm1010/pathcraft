@@ -1,3 +1,12 @@
+"""Primary answer scoring with explicit first-answer and exact-set semantics.
+
+``hits_at_1`` checks the first normalized, deduplicated prediction in supplied
+order; it is not any-answer overlap and does not require full recall. The
+evaluator does not rank answers. ``exact_match`` requires equality of the
+predicted and Gold answer sets. The checked archived CWQ summary labelled
+``Hit`` uses an any-answer-overlap convention, not this runtime field.
+"""
+
 from __future__ import annotations
 
 import json
@@ -160,7 +169,12 @@ def score_webqsp_answers(
     gold_answers: Iterable[Any],
     predicted_answers: Iterable[Any],
 ) -> dict[str, Any]:
-    """Compute the same text-set metrics as ``webqsp_mas.metrics``."""
+    """Score normalized text sets, plus the first supplied answer's hit.
+
+    ``hits_at_1`` preserves normalized, deduplicated input order; a correct
+    answer later in the list is insufficient. ``exact_match`` instead requires
+    set equality, and ``exact`` is its boolean compatibility alias.
+    """
     gold_values = webqsp_unique_answers(gold_answers)
     predicted_values = webqsp_unique_answers(predicted_answers)
     gold_keys = {normalize_webqsp_text(value) for value in gold_values}
@@ -234,7 +248,13 @@ def primary_result_row(row: dict[str, Any]) -> dict[str, Any]:
 
 
 def score_result_row(record: dict[str, Any], row: dict[str, Any]) -> dict[str, Any]:
-    """Attach only the primary ID/text score; omit old label diagnostics."""
+    """Attach primary ID/text scores without changing prediction order.
+
+    ``hits_at_1`` tests the first normalized, deduplicated prediction, not
+    any-answer overlap or full recall. ``exact_match`` requires set equality.
+    No confidence ranking is performed here. Labeled failures receive zeros;
+    auxiliary label diagnostics are omitted.
+    """
     scored = primary_result_row(row)
     gold_ids = sorted(gold_answer_ids(record))
     raw_gold_labels = gold_answer_labels(record)
@@ -254,6 +274,7 @@ def score_result_row(record: dict[str, Any], row: dict[str, Any]) -> dict[str, A
     entity_predictions = all(_is_freebase_id(value) for value in scored["prediction"])
     if entity_ids and entity_predictions:
         id_score = score_answer_ids(gold_ids, scored["prediction"])
+        # First supplied answer only, not the archived CWQ any-overlap Hit.
         scored["score"] = {
             "labeled": True,
             **id_score,
@@ -341,6 +362,10 @@ def evaluation_metadata(source: str) -> dict[str, Any]:
         "normalization": "strip Freebase namespace, remove WebQSP punctuation/separators, lowercase, deduplicate",
         "gold_source": "answer_entities IDs/labels from the configured Gold record",
         "protocol_change": "entity identity takes precedence over labels; this primary metric differs from the historical text-only protocol",
+        "hits_at_1_definition": "1 if the first normalized, deduplicated prediction belongs to Gold, otherwise 0; not any-answer overlap or full recall; labeled failures are zero",
+        "prediction_order": "preserve supplied order after normalization and deduplication; the evaluator does not rank answers by confidence",
+        "exact_match_definition": "1 only when the predicted and Gold answer sets are equal, otherwise 0; labeled failures are zero; per-row exact is the boolean alias",
+        "historical_cwq_hit": "the checked archived CWQ summary labelled Hit uses any-answer overlap (at least one correct predicted answer), which is distinct from current hits_at_1 and is not emitted as a separate runtime aggregate",
         "aggregation": "macro precision/recall/F1, hits_at_1 and exact_match over all labeled rows, including pipeline failures scored as zero",
         "failure_policy": "labeled failures receive zero precision/recall/F1/hits_at_1/exact_match and remain in the denominator; error rows are also stored separately",
         "missing_gold_policy": "rows without evaluable Gold remain unlabeled, are reported separately, and are not silently assigned zero",
