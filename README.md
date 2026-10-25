@@ -4,6 +4,20 @@ ComplexWebQuestions (CWQ) question inference and stage-aligned dataset construct
 
 This release includes **code and the final CWQ/WebQSP stage-aligned TRAIN snapshots** in `data/train/`. It does not contain raw benchmark archives, dev/test exports, model weights, Freebase dumps, retrieval cache outputs, traces, logs, intermediate experiments, or historical predictions/results. Small frozen prompt examples and scoring parameters are required runtime resources, not per-question execution traces. Underlying datasets retain their original terms; see `data/train/NOTICE.md`.
 
+## Dataset size and versioning
+
+The experiments reported in the paper used **24,250 CWQ training examples per
+stage**. The dataset is still being refined and expanded; the current public
+CWQ TRAIN snapshot contains **25,328 examples per stage (25,000+)**. These
+counts refer to stage-aligned training samples, not the evaluation-set size.
+
+The current public snapshot is a later dataset version, not the exact
+24,250-example version used in the reported experiments. Dataset updates do
+not retroactively change the experimental setup or reported results. See the
+[training-data documentation](data/train/README.md) and
+[release manifest](data/train/manifest.json) for the published files, row
+counts and checksums.
+
 ## Layout
 
 - `src/semantic_guided_kbqa/`: decomposition review, Semantic/Grounding, Compose, Operator, KG execution, and selection.
