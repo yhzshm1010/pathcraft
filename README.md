@@ -146,12 +146,11 @@ Outputs are generated under ignored `outputs/`. Internal in-memory stage evidenc
 
 ## Evaluation and publication cleanup
 
-Only the primary score is produced: precision, recall, F1, ordered first-answer
-hit (`hits_at_1`), and exact set match (`exact_match`). Entity answers use
-canonical Freebase IDs; literal/text
-answers retain the normalized text-set protocol. There are no auxiliary
-substring-label scores. Artifact comparisons and optional baseline-zero
-filters also use the primary score (`--baseline-f1-zero-only` or
+The primary score contains precision, recall, F1, answer-set Hit (`hit`),
+ordered first-answer hit (`hits_at_1`), and exact set match (`exact_match`).
+Entity answers use canonical Freebase IDs; literal/text answers use normalized
+text sets. There are no auxiliary substring-label scores. Artifact comparisons
+and optional baseline-zero filters also use the primary score (`--baseline-f1-zero-only` or
 `--baseline-all-f1-zero-only`).
 
 ### Hit, first-answer hit, and exact match
@@ -161,12 +160,12 @@ deduplicated prediction list and `G` the normalized Gold answer set.
 
 | Statistic | Per-question definition |
 | --- | --- |
-| Historical CWQ summary `Hit` (any-answer overlap) | 1 if at least one predicted answer belongs to `G`; 0 otherwise. Partial recall can still yield 1. |
+| `hit` (answer-set Hit) | 1 if at least one predicted answer belongs to `G`; 0 otherwise. Partial recall can still yield 1. Answer order does not matter. |
 | Current runtime `hits_at_1` (first-answer hit) | 1 if `P` is nonempty and its first answer belongs to `G`; 0 otherwise. A correct answer later in `P` does not count. |
 | Current runtime `exact_match` (exact set match) | 1 only if the predicted answer set equals `G`, with neither missing nor extra answers; 0 otherwise. `exact` is its boolean per-row compatibility alias. |
 
-For example, with `G = {a, b}` and `P = [c, a]`, any-answer overlap is 1,
-`hits_at_1` is 0, and `exact_match` is 0. With `P = [a]`, any-answer overlap
+For example, with `G = {a, b}` and `P = [c, a]`, `hit` is 1,
+`hits_at_1` is 0, and `exact_match` is 0. With `P = [a]`, `hit`
 and `hits_at_1` are both 1, although recall is only 0.5 and exact match is 0.
 Recalling every Gold answer is also insufficient for exact match if extra
 incorrect answers are returned.
@@ -174,15 +173,27 @@ incorrect answers are returned.
 The evaluator preserves the supplied prediction order after normalization and
 deduplication; it does not rank answers by confidence. Thus, the first element
 of an unordered query result is not automatically a highest-ranked answer.
-The current runtime does **not** emit a separate historical any-answer-overlap
-`Hit` aggregate. In particular, its `hits_at_1` must not be presented as the
-archived CWQ summary's `Hit`, or compared with it as though the definitions
-were identical. This clarification concerns the checked CWQ archive; it does
-not establish the protocol used by every historical result or other dataset.
+The runtime now emits `score.hit` for each saved question and `summary.hit`
+for the overall answer-set Hit rate. The latter is the number of hit questions
+divided by the number of scored questions, **not** mean recall or the fraction
+of questions with perfect answers. All numeric metrics are stored in `[0, 1]`;
+multiply `summary.hit` by 100 when reporting a percentage.
+
+For the first synthetic example above, the relevant per-question output is:
+
+```json
+{"score": {"hit": 1.0, "hits_at_1": 0.0, "exact_match": 0.0}}
+```
+
+`summary.hit` follows the any-answer-overlap criterion used by the checked
+archived CWQ ID summary. It is distinct from `summary.hits_at_1`; do not rename
+one as the other. This agreement in the Hit criterion does not establish that
+every historical result uses the same answer matching, denominator or failure
+policy. Current entity matching uses canonical IDs, not substring matching.
 
 Metrics are macro-averaged over **all labeled items, including failures**.
 A labeled item with a nonempty `failure` receives zero precision, recall, F1,
-`hits_at_1` and `exact_match`, even if it retains a partial prediction for
+`hit`, `hits_at_1` and `exact_match`, even if it retains a partial prediction for
 diagnostics. Failed items stay in the metric denominator and are also saved
 in the separate error output. Only items without evaluable Gold remain
 unscored; always report the processed, scored, unlabeled and error counts.
@@ -190,18 +201,27 @@ unscored; always report the processed, scored, unlabeled and error counts.
 full-test average. These are the current runtime's aggregation rules, not a
 claim about every archived summary's denominator or failure policy.
 
-The protocol version is `answer-id-primary-v4-failures-zero`. Continuation runs
-migrate v3/v2 successful-only aggregates using the complete paired error file,
-including when perfect success rows were filtered from JSON. Missing error
-records, unknown protocol versions and mixed main/error versions are rejected
-instead of silently mixing denominators. Existing result files are not changed
-until explicitly resumed; archived experiment reports retain their old scores.
+The evaluation version is `answer-id-primary-v5-hit-failures-zero`. Version 5
+adds answer-set Hit while retaining the existing precision/recall/F1,
+`hits_at_1`, exact-match, and failure-handling formulas. Supported older
+checkpoints can recover missing per-question Hit from their standard primary
+F1 scores: positive F1 means at least one matched answer. A macro F1 average
+alone cannot recover the Hit rate. When the old Hit aggregate is missing,
+continuation therefore requires either a complete set of scored rows or
+explicit perfect-row filtering metadata with consistent counters; otherwise
+it rejects an ambiguous old checkpoint instead
+of treating missing Hit as zero. The existing v3/v2 successful-only denominator
+migration still requires the complete paired error file. Missing error records,
+unknown versions and mixed main/error versions are rejected. Use a fresh run
+directory if the old checkpoint cannot be migrated safely. Existing result
+files are not changed until explicitly resumed; archived reports are not
+retroactively rewritten or claimed to follow the new output schema.
 
 The publication cleanup generalizes method-specific wording in Review and
 construction prompts, neutralizes script/configuration names, and removes
-auxiliary label metrics. This metric-description clarification does not change
-the current runtime's scoring formulas, retrieval budgets, predictions, or
-archived results. Prompt wording has changed, so a fresh model run is required
+auxiliary label metrics. Adding the `hit` output does not change existing metric
+formulas, retrieval budgets, predictions, training data, or archived results.
+Prompt wording has changed, so a fresh model run is required
 before claiming identical end-to-end predictions. Dataset provenance and
 required third-party license notices are deliberately preserved in
 [data/train/NOTICE.md](data/train/NOTICE.md).

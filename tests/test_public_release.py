@@ -75,7 +75,8 @@ class PrimaryScoringTests(unittest.TestCase):
         self.assertIn("first normalized, deduplicated prediction", metadata["hits_at_1_definition"])
         self.assertIn("does not rank", metadata["prediction_order"])
         self.assertIn("sets are equal", metadata["exact_match_definition"])
-        self.assertIn("not emitted as a separate runtime aggregate", metadata["historical_cwq_hit"])
+        self.assertIn("any normalized predicted answer", metadata["hit_definition"])
+        self.assertIn("summary.hit", metadata["hit_output"])
 
     def test_empty_prediction_is_zero(self):
         row = score_result_row({"answer_entities": {"m.correct": "Correct"}},

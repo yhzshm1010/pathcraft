@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 import json
+from math import isclose, isfinite
 from pathlib import Path
 from typing import Any
 
@@ -863,7 +864,7 @@ def _question_metric_delta(
         "score": block_delta(
             "score",
             "score",
-            ("precision", "recall", "f1", "hits_at_1", "exact_match"),
+            ("precision", "recall", "f1", "hit", "hits_at_1", "exact_match"),
         ),
         "failure_changed": baseline_failure != current.get("failure"),
         "previous_failure": baseline_failure,
@@ -1134,7 +1135,8 @@ def _load_resume_state(output: Path, errors_path: Path) -> dict[str, Any]:
     state = _empty_resume_state()
     main_payload = _read_json_object(output) if output.is_file() else {}
     errors_payload = _read_json_object(errors_path) if errors_path.is_file() else {}
-    legacy_versions = {"answer-id-primary-v3", "webqsp-id-aware-v2"}
+    successful_only_versions = {"answer-id-primary-v3", "webqsp-id-aware-v2"}
+    legacy_versions = successful_only_versions | {"answer-id-primary-v4-failures-zero"}
     versions = set()
     for payload in (main_payload, errors_payload):
         version = payload.get("evaluation", {}).get("version")
@@ -1217,16 +1219,34 @@ def _load_resume_state(output: Path, errors_path: Path) -> dict[str, Any]:
         raise ValueError("Error records are missing/incomplete; cannot safely resume scoring")
     if any(not is_error_result_row(row) for row in state["error_rows_data"]):
         raise ValueError("Error output contains a non-error row; cannot safely resume scoring")
-    if versions & legacy_versions:
+    successful_only = bool(versions & successful_only_versions)
+    previous = state["summary"]
+    if not previous and state["processed_count"]:
+        if (
+            state["success_rows"] != len(state["successful_rows"])
+            or state["processed_count"]
+            != len(state["successful_rows"]) + len(state["error_rows_data"])
+        ):
+            raise ValueError("Legacy scoring aggregate is missing; use a new run directory")
+        represented = state["successful_rows"] + (
+            [] if successful_only else state["error_rows_data"]
+        )
+        previous = summarize_result_rows(represented)
+        previous["total"] = state["processed_count"]
+    previous = _restore_summary_hit(
+        previous,
+        successful_rows=state["successful_rows"],
+        error_rows=state["error_rows_data"],
+        success_count=state["success_rows"],
+        processed_count=state["processed_count"],
+        storage=storage,
+        successful_only=successful_only,
+    )
+    state["summary"] = previous
+    if successful_only:
         # Even when perfect success rows were not persisted, their metric sums
         # remain in the old aggregate. Adding labeled zero-score errors changes
         # only the denominator; do not count their observed rows twice.
-        previous = state["summary"]
-        if not previous:
-            if state["success_rows"] != len(state["successful_rows"]):
-                raise ValueError("Legacy scoring aggregate is missing; use a new run directory")
-            previous = summarize_result_rows(state["successful_rows"])
-            previous["total"] = state["processed_count"]
         errors_summary = summarize_result_rows(state["error_rows_data"])
         migrated = _merge_summaries(previous, errors_summary)
         observed = _stored_int(previous.get("total"), state["processed_count"])
@@ -1236,6 +1256,8 @@ def _load_resume_state(output: Path, errors_path: Path) -> dict[str, Any]:
         migrated.update(total=observed, labeled=new_count, unlabeled=observed - new_count)
         state["summary"] = migrated
         state["metric_rows"] = new_count
+    else:
+        state["metric_rows"] = _stored_int(previous.get("scored"), _stored_int(previous.get("count"), 0))
     state["persisted_count"] = len(state["successful_rows"])
     state["resume_incomplete"] = bool(storage.get("resume_incomplete", False))
     state["resume_start"] = _stored_int(storage.get("resume_start"), 0)
@@ -1376,10 +1398,116 @@ def _stored_int(value: Any, default: int) -> int:
         return default
 
 
+def _summary_hit_value(summary: dict[str, Any], count: int) -> float:
+    """Never invent zero Hit for an aggregate that contains scored rows."""
+    if not count:
+        return 0.0
+    value = summary.get("hit")
+    if not isinstance(value, (int, float)) or not isfinite(value) or not 0 <= value <= 1:
+        raise ValueError("Hit aggregate is missing/invalid; use a new run directory")
+    return float(value)
+
+
+def _restore_summary_hit(
+    summary: dict[str, Any],
+    *,
+    successful_rows: list[dict[str, Any]],
+    error_rows: list[dict[str, Any]],
+    success_count: int,
+    processed_count: int,
+    storage: dict[str, Any],
+    successful_only: bool,
+) -> dict[str, Any]:
+    """Add Hit only from represented rows and explicitly filtered perfect rows.
+
+    v2/v3 aggregates describe successful rows; v4 aggregates also contain
+    labeled zero-score failures. Existing numeric Hit needs no reconstruction.
+    Missing successful rows can contribute one only when the documented
+    primary F1/recall-perfect filter and all available counters agree. Neither
+    macro F1 nor first-answer hits can recover an unknown any-overlap count.
+    """
+    count = _stored_int(summary.get("scored"), _stored_int(summary.get("count"), 0))
+    if "hit" in summary and (count or summary["hit"] is None):
+        _summary_hit_value(summary, count)
+        return dict(summary)
+
+    def inconsistent() -> None:
+        raise ValueError("Cannot reconstruct Hit from incomplete/inconsistent history; use a new run directory")
+
+    if processed_count != success_count + len(error_rows) or success_count < len(successful_rows):
+        inconsistent()
+    if any(is_error_result_row(row) for row in successful_rows):
+        inconsistent()
+    indexed = [
+        index for row in successful_rows + error_rows
+        if (index := _row_index(row)) is not None
+    ]
+    if len(indexed) != len(set(indexed)):
+        inconsistent()
+    omitted = success_count - len(successful_rows)
+    if omitted:
+        if storage.get("row_filter") != "id_f1_or_recall_nonperfect":
+            inconsistent()
+        if any(row_id_f1_recall_are_all_one(row) for row in successful_rows):
+            inconsistent()
+    for payload, key, expected in (
+        (summary, "count", count),
+        (summary, "labeled", count),
+        (summary, "total", processed_count),
+        (storage, "metric_rows", count),
+        (storage, "rows_written", len(successful_rows)),
+        (storage, "summary_count", processed_count),
+    ):
+        if key in payload and payload[key] != expected:
+            inconsistent()
+    represented = successful_rows + ([] if successful_only else error_rows)
+    scored = [row["score"] for row in represented if is_metric_result_row(row)]
+    if len(scored) + omitted != count:
+        inconsistent()
+    if omitted:
+        # A declared perfect-row filter is not enough when the old aggregate
+        # contradicts that claim. Validate every available existing metric;
+        # retain its stored value rather than replacing it during migration.
+        metric_fields = {
+            "precision": "precision",
+            "recall": "recall",
+            "f1": "f1",
+            "macro_precision": "precision",
+            "macro_recall": "recall",
+            "macro_f1": "f1",
+            "exact": "exact_match",
+            "exact_match": "exact_match",
+            "hits_at_1": "hits_at_1",
+        }
+        for aggregate_key, row_key in metric_fields.items():
+            if aggregate_key not in summary:
+                continue
+            value = summary[aggregate_key]
+            values = [score.get(row_key) for score in scored]
+            if (
+                not isinstance(value, (int, float))
+                or not isfinite(value)
+                or any(not isinstance(item, (int, float)) or not isfinite(item) for item in values)
+            ):
+                inconsistent()
+            expected = (sum(values) + omitted) / count
+            if not isclose(value, expected, rel_tol=1e-9, abs_tol=1e-12):
+                inconsistent()
+    hits = float(omitted)
+    for score in scored:
+        value = score.get("hit")
+        if not isinstance(value, (int, float)) or value not in (0, 1):
+            inconsistent()
+        hits += float(value)
+    return {**summary, "hit": hits / count if count else None}
+
+
 def _merge_summaries(previous: dict[str, Any], current: dict[str, Any]) -> dict[str, Any]:
     """Combine averages from a previous run with averages from new rows."""
     previous_count = _stored_int(previous.get("scored"), _stored_int(previous.get("count"), 0))
     current_count = _stored_int(current.get("scored"), _stored_int(current.get("count"), 0))
+    previous_hit = _summary_hit_value(previous, previous_count)
+    current_hit = _summary_hit_value(current, current_count)
     total = previous_count + current_count
     previous_total = _stored_int(previous.get("total"), previous_count)
     current_total = _stored_int(current.get("total"), current_count)
@@ -1399,14 +1527,15 @@ def _merge_summaries(previous: dict[str, Any], current: dict[str, Any]) -> dict[
         "precision",
         "recall",
         "f1",
+        "hit",
         "exact_match",
         "hits_at_1",
         "macro_precision",
         "macro_recall",
         "macro_f1",
     ):
-        previous_value = float(previous.get(key, 0.0) or 0.0)
-        current_value = float(current.get(key, 0.0) or 0.0)
+        previous_value = previous_hit if key == "hit" else float(previous.get(key, 0.0) or 0.0)
+        current_value = current_hit if key == "hit" else float(current.get(key, 0.0) or 0.0)
         merged[key] = (
             previous_count * previous_value + current_count * current_value
         ) / total if total else None
@@ -1428,6 +1557,8 @@ def _subtract_summaries(total_summary: dict[str, Any], removed: dict[str, Any]) 
         removed.get("scored"),
         _stored_int(removed.get("count"), 0),
     )
+    total_hit = _summary_hit_value(total_summary, total_count)
+    removed_hit = _summary_hit_value(removed, removed_count)
     remaining_count = total_count - removed_count
     if remaining_count < 0:
         raise ValueError("Cannot subtract more scored rows than the aggregate contains")
@@ -1452,17 +1583,25 @@ def _subtract_summaries(total_summary: dict[str, Any], removed: dict[str, Any]) 
         "precision",
         "recall",
         "f1",
+        "hit",
         "exact_match",
         "hits_at_1",
         "macro_precision",
         "macro_recall",
         "macro_f1",
     ):
-        total_value = float(total_summary.get(metric, 0.0) or 0.0)
-        removed_value = float(removed.get(metric, 0.0) or 0.0)
+        total_value = total_hit if metric == "hit" else float(total_summary.get(metric, 0.0) or 0.0)
+        removed_value = removed_hit if metric == "hit" else float(removed.get(metric, 0.0) or 0.0)
         result[metric] = (
             total_count * total_value - removed_count * removed_value
         ) / remaining_count if remaining_count else None
+    if remaining_count:
+        # Subtracting floating-point averages can leave tiny negative/above-one
+        # residues even though the underlying Hit count is a valid integer.
+        hit = result["hit"]
+        if not -1e-12 <= hit <= 1.0 + 1e-12:
+            raise ValueError("Cannot subtract inconsistent Hit aggregates")
+        result["hit"] = min(1.0, max(0.0, hit))
     return result
 
 
