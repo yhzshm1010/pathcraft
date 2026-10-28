@@ -1,9 +1,6 @@
 """Primary scoring with separate answer-set Hit, first-answer hit, and exact match.
 
 ``hit`` checks whether any normalized predicted answer belongs to Gold.
-The reported metric is answer-set Hit (``summary.hit``): exact canonical
-Freebase ID matching for entity-only answers, otherwise normalized
-literal/answer-text exact matching. It is not label-substring matching.
 ``hits_at_1`` instead checks the first normalized, deduplicated prediction in
 supplied order. Neither requires full recall, and the evaluator does not rank
 answers. ``exact_match`` requires equality of the predicted and Gold sets.
@@ -385,7 +382,7 @@ def row_id_f1_recall_are_all_one(row: dict[str, Any]) -> bool:
 
 
 def evaluation_metadata(source: str) -> dict[str, Any]:
-    """Describe the reported Hit protocol without changing numeric scores."""
+    """Describe the evaluation protocol used by generated result files."""
     return {
         "version": EVALUATION_VERSION,
         "source": source,
@@ -398,18 +395,6 @@ def evaluation_metadata(source: str) -> dict[str, Any]:
         "prediction_order": "preserve supplied order after normalization and deduplication; the evaluator does not rank answers by confidence",
         "exact_match_definition": "1 only when the predicted and Gold answer sets are equal, otherwise 0; labeled failures are zero; per-row exact is the boolean alias",
         "hit_output": "per-question score.hit and aggregate summary.hit in [0, 1]; multiply by 100 for a percentage; v5 adds this field without changing existing metric formulas",
-        "reported_hit_metric": {
-            "name": "Answer-set Hit (canonical Freebase ID / normalized-literal exact matching)",
-            "name_zh": "基于规范化 Freebase 实体 ID／字面量精确匹配的答案集合命中率",
-            "per_question_field": "score.hit",
-            "summary_field": "summary.hit",
-            "entity_matching": "exact canonical Freebase ID equality when all Gold and predicted answers are Freebase entity IDs",
-            "literal_or_text_fallback": "exact normalized literal/answer-text equality for the existing non-entity-only scoring branch",
-            "per_question_matching_basis_field": "score_basis (answer_ids or answer_text)",
-            "substring_matching": False,
-            "first_answer_only": False,
-            "aggregation": "mean of per-question binary Hit over all labeled items, including zero-scored failures; multiply by 100 for a percentage",
-        },
         "historical_cwq_hit": "hit uses the same any-answer-overlap criterion as the checked archived CWQ ID summary; answer matching, failure policy and denominator must still be checked separately for historical comparisons",
         "aggregation": "macro precision/recall/F1, hit, hits_at_1 and exact_match over all labeled rows, including pipeline failures scored as zero",
         "failure_policy": "labeled failures receive zero precision/recall/F1/hit/hits_at_1/exact_match and remain in the denominator; error rows are also stored separately",
