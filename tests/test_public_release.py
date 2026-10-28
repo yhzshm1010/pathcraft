@@ -78,6 +78,43 @@ class PrimaryScoringTests(unittest.TestCase):
         self.assertIn("any normalized predicted answer", metadata["hit_definition"])
         self.assertIn("summary.hit", metadata["hit_output"])
 
+    def test_reported_hit_metadata_identifies_matching_and_fields(self):
+        reported = evaluation_metadata("synthetic")["reported_hit_metric"]
+        self.assertEqual(reported["summary_field"], "summary.hit")
+        self.assertEqual(reported["per_question_field"], "score.hit")
+        self.assertIn("Freebase", reported["entity_matching"])
+        self.assertIn("normalized", reported["literal_or_text_fallback"])
+        self.assertIn("score_basis", reported["per_question_matching_basis_field"])
+        self.assertFalse(reported["substring_matching"])
+        self.assertFalse(reported["first_answer_only"])
+
+    def test_reported_hit_uses_id_identity_not_label_substrings(self):
+        record = {"answer_entities": {"m.correct": "York"}}
+        canonical_id_match = score_result_row(record, {"prediction": ["http://rdf.freebase.com/ns/m.correct"]})
+        self.assertEqual(canonical_id_match["score_basis"], "answer_ids")
+        self.assertEqual(canonical_id_match["score"]["hit"], 1.0)
+        different_entity = score_result_row(record, {"prediction": ["m.other"],
+            "answers": [{"id":"m.other", "label":"York"}]})
+        self.assertEqual(different_entity["score_basis"], "answer_ids")
+        self.assertEqual(different_entity["score"]["hit"], 0.0)
+        literal_substring = score_result_row({"answer_entities": {"Value":"York"}}, {"prediction":["New York"]})
+        self.assertEqual(literal_substring["score_basis"], "answer_text")
+        self.assertEqual(literal_substring["score"]["hit"], 0.0)
+
+    def test_reported_hit_metadata_is_written_without_changing_scores(self):
+        row = score_result_row({"answer_entities": {"m.correct":"Correct"}},
+            {"prediction":["m.wrong", "m.correct"], "index":0})
+        original_score = dict(row["score"])
+        with tempfile.TemporaryDirectory() as directory:
+            output, errors = Path(directory)/"results.json", Path(directory)/"errors.json"
+            _write_output(output, [row], config_path="synthetic", evaluation_source="synthetic",
+                          write_only_nonperfect=False, errors_path=errors)
+            payload = json.loads(output.read_text())
+            self.assertEqual(payload["evaluation"]["reported_hit_metric"]["summary_field"], "summary.hit")
+            self.assertEqual(payload["rows"][0]["score"], original_score)
+            self.assertEqual(payload["summary"]["hit"], 1.0)
+            self.assertEqual(payload["summary"]["hits_at_1"], 0.0)
+
     def test_empty_prediction_is_zero(self):
         row = score_result_row({"answer_entities": {"m.correct": "Correct"}},
                                {"prediction": []})

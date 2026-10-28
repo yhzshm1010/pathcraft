@@ -155,6 +155,16 @@ and optional baseline-zero filters also use the primary score (`--baseline-f1-ze
 
 ### Hit, first-answer hit, and exact match
 
+**Reported Hit metric:** `summary.hit` is **answer-set Hit based on canonical
+Freebase entity ID / normalized-literal exact matching**. Entity-only Gold
+and predictions are compared by exact equality of their canonical Freebase
+IDs; the existing literal/text fallback compares normalized answer strings
+for equality. This is not answer-label substring matching and is not the
+first-answer statistic `summary.hits_at_1`. The per-question `score_basis`
+records whether `answer_ids` or `answer_text` matching was used. This label
+documents the existing scoring behavior; it does not change scores or
+retroactively rescore archived experiments.
+
 These statistics must not be used interchangeably. Let `P` be the normalized,
 deduplicated prediction list and `G` the normalized Gold answer set.
 
